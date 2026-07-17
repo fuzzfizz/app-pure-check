@@ -1,0 +1,17 @@
+{
+  "appTitle": "PureCheck",
+  "welcome": "ยินดีต้อนรับ",
+  "scanBarcode": "สแกนบาร์โค้ด",
+  "verifyProduct": "ตรวจสอบผลิตภัณฑ์",
+  "ingredients": "ส่วนผสม",
+  "mySkinProfile": "โปรไฟล์ผิวของฉัน",
+  "scanHistory": "ประวัติการสแกน",
+  "settings": "การตั้งค่า",
+  "logout": "ออกจากระบบ",
+  "save": "บันทึก",
+  "cancel": "ยกเลิก",
+  "searchHint": "ค้นหาผลิตภัณฑ์หรือส่วนผสม...",
+  "safe": "ปลอดภัย",
+  "caution": "ควรระวัง",
+  "danger": "พบสารที่แพ้"
+}

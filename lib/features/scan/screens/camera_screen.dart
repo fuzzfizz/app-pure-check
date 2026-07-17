@@ -1,0 +1,162 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../../core/theme/app_theme.dart';
+import '../providers/scan_provider.dart';
+import 'verify_product_screen.dart';
+import 'manual_entry_screen.dart';
+import 'analyzing_screen.dart';
+
+class CameraScreen extends ConsumerStatefulWidget {
+  const CameraScreen({super.key});
+  @override
+  ConsumerState<CameraScreen> createState() => _CameraScreenState();
+}
+
+class _CameraScreenState extends ConsumerState<CameraScreen> {
+  final MobileScannerController _controller = MobileScannerController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scanState = ref.watch(scanNotifierProvider);
+    final notifier = ref.read(scanNotifierProvider.notifier);
+
+    // Navigation trigger when analysis completes
+    ref.listen(scanNotifierProvider, (previous, next) {
+      if (next.step == ScanStep.idle && next.analysisResult != null && next.product != null) {
+        context.go('/result', extra: {
+          'product': next.product,
+          'analysis': next.analysisResult,
+        });
+      }
+    });
+
+    switch (scanState.step) {
+      case ScanStep.idle:
+      case ScanStep.scanning:
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('สแกนบาร์โค้ด'),
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => context.pop(),
+            ),
+          ),
+          body: Stack(
+            children: [
+              MobileScanner(
+                controller: _controller,
+                onDetect: (capture) {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  for (final barcode in barcodes) {
+                    if (barcode.rawValue != null) {
+                      notifier.onBarcodeScanned(barcode.rawValue!);
+                      break;
+                    }
+                  }
+                },
+              ),
+              // Scanner Overlay Aiming Frame
+              Center(
+                child: Container(
+                  width: 280,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.primary, width: 3),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 64,
+                left: 24,
+                right: 24,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha(160),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'จ่อกล้องตรงกับบาร์โค้ดผลิตภัณฑ์เพื่อเริ่มสแกน',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case ScanStep.fetching:
+        return const Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('กำลังค้นหาข้อมูลผลิตภัณฑ์...'),
+              ],
+            ),
+          ),
+        );
+
+      case ScanStep.verifying:
+        return VerifyProductScreen(
+          product: scanState.product!,
+          onBack: () => notifier.reset(),
+        );
+
+      case ScanStep.manualEntry:
+        return ManualEntryScreen(
+          barcode: scanState.barcode ?? '',
+          onBack: () => notifier.reset(),
+        );
+
+      case ScanStep.analyzing:
+        return const AnalyzingScreen();
+
+      case ScanStep.error:
+        return Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(Icons.error_outline_rounded, size: 72, color: AppColors.danger),
+                const SizedBox(height: 24),
+                Text(
+                  'เกิดข้อผิดพลาดในการวิเคราะห์',
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  scanState.error ?? 'ไม่สามารถดำเนินการสแกนได้ในขณะนี้',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => notifier.reset(),
+                  child: const Text('ลองอีกครั้ง'),
+                ),
+              ],
+            ),
+          ),
+        );
+    }
+  }
+}

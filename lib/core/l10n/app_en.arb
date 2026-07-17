@@ -1,0 +1,17 @@
+{
+  "appTitle": "PureCheck",
+  "welcome": "Welcome",
+  "scanBarcode": "Scan Barcode",
+  "verifyProduct": "Verify Product",
+  "ingredients": "Ingredients",
+  "mySkinProfile": "My Skin Profile",
+  "scanHistory": "Scan History",
+  "settings": "Settings",
+  "logout": "Logout",
+  "save": "Save",
+  "cancel": "Cancel",
+  "searchHint": "Search products or ingredients...",
+  "safe": "Safe",
+  "caution": "Caution",
+  "danger": "Allergen Found"
+}
