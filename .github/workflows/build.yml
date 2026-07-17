@@ -1,0 +1,94 @@
+name: Flutter Build Cloud CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.1'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Localizations
+        run: flutter gen-l10n
+
+      # Setup production environment variables from GitHub Secrets
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+
+      - name: Build Android APK
+        run: flutter build apk --release
+
+      - name: Build Android App Bundle (AAB)
+        run: flutter build appbundle --release
+
+      - name: Upload Android Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.1'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          flutter pub get
+          cd ios && pod install
+
+      - name: Generate Localizations
+        run: flutter gen-l10n
+
+      # Setup production environment variables from GitHub Secrets
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+
+      # Build unsigned iOS IPA
+      - name: Build iOS IPA
+        run: flutter build ipa --release --no-codesign
+
+      - name: Upload iOS Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release
+          path: build/ios/archive/Runner.xcarchive
