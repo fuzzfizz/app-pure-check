@@ -65,6 +65,7 @@ class Product {
         'ingredients': ingredients,
         'raw_ingredients_text': rawIngredientsText,
         'source': source.name,
+        'verified_count': verifiedCount,
         'image_url': imageUrl,
       };
 

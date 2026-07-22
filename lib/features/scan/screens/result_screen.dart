@@ -292,6 +292,43 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                       const SizedBox(height: 20),
                     ],
                   ],
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      try {
+                        final supabaseService = ref.read(supabaseServiceProvider);
+                        final updatedProduct = Product(
+                          id: product.id,
+                          barcode: product.barcode,
+                          name: product.name,
+                          brand: product.brand,
+                          ingredients: product.ingredients,
+                          rawIngredientsText: product.rawIngredientsText,
+                          source: product.source,
+                          verifiedCount: product.verifiedCount + 1,
+                          imageUrl: product.imageUrl,
+                        );
+                        await supabaseService.upsertProduct(updatedProduct);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('ขอบคุณที่ร่วมยืนยันข้อมูลผลิตภัณฑ์สำหรับชุมชน!')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.people_outline_rounded),
+                    label: const Text('ช่วยชุมชน: ยืนยันส่งข้อมูล'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.white,
+                    ),
+                  ),
                 ],
               ),
             ),
