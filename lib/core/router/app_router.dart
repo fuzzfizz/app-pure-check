@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/user_profile.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/intro_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -24,8 +26,25 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (user == null && !isPublic) return '/login';
 
-      if (user != null && (state.matchedLocation == '/login' || state.matchedLocation == '/register')) {
-        return '/home';
+      if (user != null) {
+        // Skip check on splash screen (handled by splash timer)
+        if (state.matchedLocation == '/splash') return null;
+
+        final profileAsync = ref.read(currentProfileProvider);
+        UserProfile? profile;
+        if (profileAsync.hasValue) {
+          profile = profileAsync.value;
+        } else {
+          profile = await ref.read(currentProfileProvider.future);
+        }
+
+        final isOnboarding = state.matchedLocation.startsWith('/onboarding');
+
+        if (profile == null || !profile.onboardingComplete) {
+          if (!isOnboarding) return '/onboarding';
+        } else {
+          if (isOnboarding || isPublic) return '/home';
+        }
       }
 
       return null;

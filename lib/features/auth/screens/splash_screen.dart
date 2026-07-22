@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -24,7 +25,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (user == null) {
       context.go('/intro');
     } else {
-      context.go('/home');
+      final profile = await ref.read(currentProfileProvider.future);
+      if (!mounted) return;
+      if (profile == null || !profile.onboardingComplete) {
+        context.go('/onboarding');
+      } else {
+        context.go('/home');
+      }
     }
   }
 

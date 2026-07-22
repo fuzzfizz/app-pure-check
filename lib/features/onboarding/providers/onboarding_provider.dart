@@ -111,6 +111,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
       // Save profile
       await supabaseService.upsertProfile(profile);
+      ref.invalidate(currentProfileProvider);
 
       // Save allergens
       for (final allergen in state.allergens) {
