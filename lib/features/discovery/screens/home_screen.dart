@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/safety_badge.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../account/providers/profile_provider.dart';
+import '../../scan/providers/scan_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -160,7 +161,10 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: () => context.push('/scan'),
+                        onPressed: () {
+                          ref.read(scanNotifierProvider.notifier).reset();
+                          context.push('/scan');
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.white,
                           foregroundColor: AppColors.primaryDark,
