@@ -83,12 +83,18 @@ jobs:
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
 
-      # Build unsigned iOS IPA
+      # Build unsigned iOS IPA and manually pack it
       - name: Build iOS IPA
-        run: flutter build ipa --release --no-codesign
+        run: |
+          flutter build ipa --release --no-codesign
+          mkdir -p build/ios/ipa
+          cd build/ios/ipa
+          mkdir -p Payload
+          cp -r ../archive/Runner.xcarchive/Products/Applications/Runner.app Payload/
+          zip -r pure_check.ipa Payload
 
       - name: Upload iOS Binaries
         uses: actions/upload-artifact@v4
         with:
           name: ios-release
-          path: build/ios/ipa/*.ipa
+          path: build/ios/ipa/pure_check.ipa
