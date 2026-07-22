@@ -51,6 +51,21 @@
 - Review: ✅ Approved (spec compliant, quality approved)
 - Notes: ARB localization configuration, Thai/English strings, and Supabase SQL migration script implemented.
 
+## Task 11: COMPLETE
+- Commits: 1b89a2d..ed733cb
+- Review: ✅ Approved (spec compliant, quality approved)
+- Notes: Implemented onboarding guard redirect in GoRouter and SplashScreen, and Riverpod profile cache invalidation.
+
+## Task 12: COMPLETE
+- Commits: ed733cb..53ef61d
+- Review: ✅ Approved (spec compliant, quality approved)
+- Notes: Implemented localeProvider using Riverpod & SharedPreferences, registered delegates and supported locales in MaterialApp.router, and connected SettingsScreen language toggle. Added unit tests for the locale notifier.
+
+## Task 13: COMPLETE
+- Commits: 53ef61d..ae242d6
+- Review: ✅ Approved (spec compliant, quality approved)
+- Notes: Added community verification button in ResultScreen to increment and save product verification count in Supabase.
+
 
 
 
