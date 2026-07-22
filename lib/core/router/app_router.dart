@@ -32,7 +32,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
         final profileAsync = ref.read(currentProfileProvider);
         UserProfile? profile;
-        if (profileAsync.hasValue) {
+        if (profileAsync.hasValue && !profileAsync.isLoading) {
           profile = profileAsync.value;
         } else {
           profile = await ref.read(currentProfileProvider.future);
