@@ -31,6 +31,41 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     super.dispose();
   }
 
+  void _showManualBarcodeDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('ป้อนหมายเลขบาร์โค้ด'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              hintText: 'เช่น 8851234567890',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('ยกเลิก'),
+            ),
+            TextButton(
+              onPressed: () {
+                final barcode = controller.text.trim();
+                if (barcode.isNotEmpty) {
+                  Navigator.pop(context);
+                  ref.read(scanNotifierProvider.notifier).onBarcodeScanned(barcode);
+                }
+              },
+              child: const Text('ตกลง'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scanState = ref.watch(scanNotifierProvider);
@@ -56,11 +91,58 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               icon: const Icon(Icons.close),
               onPressed: () => context.pop(),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.keyboard_rounded),
+                tooltip: 'ป้อนบาร์โค้ดด้วยตัวเอง',
+                onPressed: () => _showManualBarcodeDialog(context),
+              ),
+            ],
           ),
           body: Stack(
             children: [
               MobileScanner(
                 controller: _controller,
+                errorBuilder: (context, error, child) {
+                  return Container(
+                    color: Colors.black87,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.videocam_off_rounded, color: AppColors.white, size: 64),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'ไม่สามารถเปิดกล้องได้ หรืออุปกรณ์ไม่รองรับการสแกน',
+                              style: TextStyle(color: AppColors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'คุณยังคงสามารถใช้ฟังก์ชันสแกนได้โดยการกรอกหมายเลขบาร์โค้ดด้วยตัวเอง',
+                              style: TextStyle(color: Colors.white70, fontSize: 14),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: () => _showManualBarcodeDialog(context),
+                              icon: const Icon(Icons.keyboard_rounded),
+                              label: const Text('ป้อนบาร์โค้ดด้วยตัวเอง'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
                 onDetect: (capture) {
                   final List<Barcode> barcodes = capture.barcodes;
                   for (final barcode in barcodes) {
