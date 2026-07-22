@@ -25,7 +25,9 @@ class _OnboardingShellState extends ConsumerState<OnboardingShell> {
   }
 
   void _next() {
-    if (_currentStep < _totalSteps - 1) {
+    if (_currentStep == _totalSteps - 2) {
+      setState(() => _currentStep = _totalSteps - 1);
+    } else if (_currentStep < _totalSteps - 2) {
       _pageCtrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     }
   }
