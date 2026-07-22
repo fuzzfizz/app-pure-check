@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/providers/locale_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -37,13 +38,12 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.language_rounded, color: AppColors.primary),
             title: const Text('ภาษาแสดงผล'),
             trailing: DropdownButton<String>(
-              value: 'th',
+              value: ref.watch(localeProvider).languageCode,
               underline: const SizedBox(),
               onChanged: (val) {
-                // To be wired with l10n package in Task 10
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('กำลังพัฒนาการเปลี่ยนภาษา')),
-                );
+                if (val != null) {
+                  ref.read(localeProvider.notifier).setLocale(val);
+                }
               },
               items: const [
                 DropdownMenuItem(value: 'th', child: Text('ภาษาไทย')),

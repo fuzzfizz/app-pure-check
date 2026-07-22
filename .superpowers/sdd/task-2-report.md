@@ -1,25 +1,27 @@
-# Task 2 Report: Data Models + Core Services
+# Task 2 Report: Wire Up Localization & Language Toggle
 
-## What was implemented
-1. **Data Models:**
-   - `lib/core/models/user_profile.dart`: SkinType enum & UserProfile model with JSON parsing and copyWith.
-   - `lib/core/models/allergen.dart`: AllergenSeverity & AllergenSource enums and Allergen model.
-   - `lib/core/models/product.dart`: ProductSource enum and Product model, including `Product.fromOpenBeautyFacts` mapper.
-   - `lib/core/models/analysis_result.dart`: SafetyLevel enum and AnalysisResult model with flagged/breakdown items mapping.
+## What Was Implemented
+- Created `LocaleNotifier` and `localeProvider` in `lib/core/providers/locale_provider.dart` using `StateNotifier` and `SharedPreferences` to manage and persist app locale.
+- Updated `lib/main.dart` to watch `localeProvider`, set `locale` in `MaterialApp.router`, and register `localizationsDelegates` (`AppLocalizations.delegate`, `GlobalMaterialLocalizations.delegate`, `GlobalWidgetsLocalizations.delegate`, `GlobalCupertinoLocalizations.delegate`) and `supportedLocales` (`[Locale('th'), Locale('en')]`).
+- Updated `lib/features/account/screens/settings_screen.dart` to bind the language `DropdownButton` value to `ref.watch(localeProvider).languageCode` and invoke `ref.read(localeProvider.notifier).setLocale(val)` on selection.
 
-2. **Core Services:**
-   - `lib/core/services/supabase_service.dart`: Profile upsert/fetch, allergens fetch/add/delete, product cache check/upsert/search, scan history log/fetch.
-   - `lib/core/services/beauty_facts_service.dart`: Barcode fetching from Open Beauty Facts API.
-   - `lib/core/services/gemini_service.dart`: Ingredient analysis using `gemini-1.5-flash` with JSON output formatting.
+## What Was Tested & Test Results
+- Created `test/core/providers/locale_provider_test.dart` to test:
+  1. Default locale initialization (defaults to `th`).
+  2. Loading saved locale from `SharedPreferences` on initialization (`en`).
+  3. Setting new locale via `setLocale` updates Riverpod state and persists to `SharedPreferences`.
+- Executed `flutter test`: Passed 4/4 tests cleanly.
+- Executed `flutter analyze`: Passed with 0 issues/warnings.
 
-## Verification
-- Ran `flutter analyze` -> Clean (0 errors, 0 warnings).
+## Files Changed
+- `lib/core/providers/locale_provider.dart` (Created)
+- `lib/main.dart` (Modified)
+- `lib/features/account/screens/settings_screen.dart` (Modified)
+- `test/core/providers/locale_provider_test.dart` (Created)
 
-## Files created
-- `lib/core/models/user_profile.dart`
-- `lib/core/models/allergen.dart`
-- `lib/core/models/product.dart`
-- `lib/core/models/analysis_result.dart`
-- `lib/core/services/supabase_service.dart`
-- `lib/core/services/beauty_facts_service.dart`
-- `lib/core/services/gemini_service.dart`
+## Self-Review Findings
+- Included `if (mounted)` check in `_initLocale()` to prevent state updates if the notifier is disposed before async `SharedPreferences` instance completes.
+- Clean separation of core provider state and feature UI.
+
+## Issues or Concerns
+- None. Everything is passing cleanly.
