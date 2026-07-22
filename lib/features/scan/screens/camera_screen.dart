@@ -18,6 +18,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
   final MobileScannerController _controller = MobileScannerController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(scanNotifierProvider.notifier).reset();
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

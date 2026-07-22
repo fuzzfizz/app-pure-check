@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>เราจำเป็นต้องเข้าถึงกล้องเพื่อใช้สแกนบาร์โค้ดของผลิตภัณฑ์สำหรับค้นหาและวิเคราะห์ส่วนผสม</string>
 </dict>
 </plist>
