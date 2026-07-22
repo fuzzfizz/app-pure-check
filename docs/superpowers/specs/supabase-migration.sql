@@ -53,6 +53,9 @@ ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read products" ON public.products FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can insert products" ON public.products FOR INSERT
   WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can update products" ON public.products FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
 
 -- scan_history (per user)
 CREATE TABLE IF NOT EXISTS public.scan_history (
