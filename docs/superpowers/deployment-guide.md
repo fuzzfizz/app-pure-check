@@ -144,7 +144,45 @@ flutter build ipa --release
 
 ---
 
-## 6. Play Store / App Store Submission Checklist
+## 6. How to Install on a Physical iPhone (100% Free Methods)
+
+You do **not** need a paid Apple Developer account to test the app on your physical iPhone. Use one of the two free options below:
+
+### Option A: Sideloading the GitHub Actions Build (No Mac Required)
+If you don't have a Mac, you can build the app via GitHub Actions, download the unsigned `.ipa` file, and sideload it using Sideloadly on your computer (Windows or Mac):
+
+1. **Download the IPA**: Go to your successful GitHub Action run, click **Artifacts** at the bottom, and download the `ios-release` zip file. Extract it to get `pure_check.ipa`.
+2. **Install Sideloadly**: Download and install **Sideloadly** (`https://sideloadly.io`) on your Windows/Mac computer.
+3. **Connect Device**: Connect your iPhone to your computer using a USB cable. Click "Trust this computer" on your iPhone if prompted.
+4. **Load App**: Open Sideloadly and drag your downloaded `pure_check.ipa` file into the "IPA" box.
+5. **Sign with Free Apple ID**:
+   * Enter your Apple ID email address in the designated field.
+   * Click **Start**.
+   * Enter your Apple ID password when prompted. Sideloadly will request a free 7-day developer certificate from Apple and sign the app.
+6. **Enable Developer Mode** (Required on iOS 16+):
+   * On your iPhone, go to **Settings** -> **Privacy & Security** -> **Developer Mode**.
+   * Toggle it **ON** and restart your phone.
+7. **Trust the Personal Certificate**:
+   * Go to **Settings** -> **General** -> **VPN & Device Management**.
+   * Under **Developer App**, tap on your Apple ID email.
+   * Tap **Trust "[Your Apple ID]"** and confirm.
+8. **Launch**: You can now open the app on your iPhone!
+   * *Note: Since this uses a free account, the app will expire and must be re-sideloaded (or refreshed) every 7 days.*
+
+### Option B: Local Xcode Run (Requires a Mac)
+If you have a Mac, you can deploy directly from Xcode using your personal Apple ID:
+
+1. Connect your iPhone to your Mac via USB.
+2. Open the [ios/Runner.xcworkspace](file:///D:/AppPureCheck/app_pure_check/ios/Runner.xcworkspace) workspace in Xcode.
+3. Select **Runner** in the left sidebar, click the **Signing & Capabilities** tab, and check **Automatically manage signing**.
+4. Choose your Apple ID Team (add your Apple ID to Xcode settings if you haven't).
+5. Change the **Bundle Identifier** to a unique name (e.g., `com.yourname.purecheck`).
+6. Choose your physical iPhone from the device target list in the top bar.
+7. Click the **Run** button (or run `flutter run --release` in your terminal). Xcode will build, sign, and launch the app on your phone.
+
+---
+
+## 7. Play Store / App Store Submission Checklist
 
 | Check | Description |
 |---|---|
