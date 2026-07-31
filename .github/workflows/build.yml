@@ -42,10 +42,10 @@ jobs:
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
 
       - name: Build Android APK
-        run: flutter build apk --release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Build Android App Bundle (AAB)
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --no-tree-shake-icons
 
       - name: Upload Android Binaries
         uses: actions/upload-artifact@v4
@@ -86,7 +86,7 @@ jobs:
       # Build unsigned iOS IPA and manually pack it
       - name: Build iOS IPA
         run: |
-          flutter build ipa --release --no-codesign
+          flutter build ipa --release --no-codesign --no-tree-shake-icons
           mkdir -p build/ios/ipa
           cd build/ios/ipa
           mkdir -p Payload
