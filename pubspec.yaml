@@ -24,7 +24,7 @@ dependencies:
   supabase_flutter: ^2.9.0
 
   # AI
-  google_generative_ai: ^0.4.6
+  google_generative_ai: ^0.4.7
 
   # Barcode scanner
   mobile_scanner: ^6.0.5

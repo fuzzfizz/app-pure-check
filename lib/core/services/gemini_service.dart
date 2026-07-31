@@ -1,17 +1,24 @@
 import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../models/allergen.dart';
 import '../models/user_profile.dart';
 import '../models/analysis_result.dart';
 
 class GeminiService {
-  late final GenerativeModel _model;
+  GeminiService();
 
-  GeminiService() {
-    _model = GenerativeModel(
+  Future<GenerativeModel> _getModel() async {
+    final prefs = await SharedPreferences.getInstance();
+    final customKey = prefs.getString('custom_gemini_api_key');
+    final activeKey = (customKey != null && customKey.trim().isNotEmpty)
+        ? customKey.trim()
+        : AppConfig.geminiApiKey;
+
+    return GenerativeModel(
       model: 'gemini-1.5-flash',
-      apiKey: AppConfig.geminiApiKey,
+      apiKey: activeKey,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',
         temperature: 0.2,
@@ -56,7 +63,8 @@ Rules:
 - Only flag ingredients that are genuinely concerning for this user's profile
 ''';
 
-    final response = await _model.generateContent([Content.text(prompt)]);
+    final model = await _getModel();
+    final response = await model.generateContent([Content.text(prompt)]);
     final text = response.text ?? '{}';
     try {
       final json = jsonDecode(text) as Map<String, dynamic>;
