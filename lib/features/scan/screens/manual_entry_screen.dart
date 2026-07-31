@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/product.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/scan_provider.dart';
@@ -31,20 +32,20 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  void _submit(AppLocalizations l10n) {
     final name = _nameCtrl.text.trim();
     final ingredientsText = _ingredientsCtrl.text.trim();
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกชื่อผลิตภัณฑ์')),
+        SnackBar(content: Text(l10n.pleaseEnterProductName)),
       );
       return;
     }
 
     if (ingredientsText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกส่วนผสม')),
+        SnackBar(content: Text(l10n.pleaseEnterIngredients)),
       );
       return;
     }
@@ -71,9 +72,11 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ไม่พบข้อมูลผลิตภัณฑ์'),
+        title: Text(l10n.productNotFound),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: widget.onBack,
@@ -97,7 +100,7 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'ไม่พบรหัสบาร์โค้ด: ${widget.barcode} ในระบบ ท่านสามารถร่วมกรอกส่วนผสมเองเพื่อเริ่มวิเคราะห์ความเหมาะสม',
+                      l10n.barcodeNotFoundMessage(widget.barcode),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppColors.textPrimary,
                           ),
@@ -109,26 +112,26 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
             const SizedBox(height: 24),
             TextField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'ชื่อผลิตภัณฑ์ (จำเป็น)',
-                hintText: 'เช่น UV Water Serum',
+              decoration: InputDecoration(
+                labelText: l10n.productNameRequired,
+                hintText: l10n.productNameHint,
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _brandCtrl,
-              decoration: const InputDecoration(
-                labelText: 'แบรนด์ (ไม่จำเป็น)',
-                hintText: 'เช่น MizuMi',
+              decoration: InputDecoration(
+                labelText: l10n.brandOptional,
+                hintText: l10n.brandHint,
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _ingredientsCtrl,
               maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'ส่วนผสมทั้งหมด (แยกด้วยเครื่องหมายจุลภาค ,)',
-                hintText: 'Water, Niacinamide, Glycerin, Phenoxyethanol...',
+              decoration: InputDecoration(
+                labelText: l10n.allIngredientsSeparated,
+                hintText: l10n.ingredientsPlaceholder,
                 alignLabelWithHint: true,
               ),
             ),
@@ -140,8 +143,8 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: ElevatedButton(
-            onPressed: _submit,
-            child: const Text('เสร็จสิ้นและไปขั้นตอนถัดไป'),
+            onPressed: () => _submit(l10n),
+            child: Text(l10n.doneAndContinue),
           ),
         ),
       ),

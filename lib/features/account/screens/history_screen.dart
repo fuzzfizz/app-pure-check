@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/analysis_result.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/safety_badge.dart';
@@ -12,30 +13,31 @@ class HistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final historyAsync = ref.watch(scanHistoryProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ประวัติการสแกนทั้งหมด'),
+        title: Text(l10n.allScanHistory),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(scanHistoryProvider.future),
         child: historyAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('เกิดข้อผิดพลาด: $err')),
+          error: (err, _) => Center(child: Text(l10n.errorGeneric(err.toString()))),
           data: (historyList) {
             if (historyList.isEmpty) {
-              return const Center(
+              return Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.history_rounded, size: 64, color: AppColors.primary),
-                      SizedBox(height: 16),
+                      const Icon(Icons.history_rounded, size: 64, color: AppColors.primary),
+                      const SizedBox(height: 16),
                       Text(
-                        'คุณยังไม่มีประวัติการสแกนผลิตภัณฑ์',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        l10n.noScanHistoryYet,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -51,7 +53,7 @@ class HistoryScreen extends ConsumerWidget {
                 final item = historyList[i];
                 final product = item['products'] as Map<String, dynamic>? ?? {};
                 final name = product['name'] as String? ?? 'Unknown Product';
-                final brand = product['brand'] as String? ?? 'ไม่ระบุแบรนด์';
+                final brand = product['brand'] as String? ?? l10n.unknownBrand;
                 final safetyText = item['safety_level'] as String? ?? 'caution';
                 final safety = SafetyLevel.values.firstWhere(
                   (e) => e.name == safetyText,

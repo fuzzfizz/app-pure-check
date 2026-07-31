@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/product.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/scan_provider.dart';
@@ -59,11 +60,12 @@ class _VerifyProductScreenState extends ConsumerState<VerifyProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final notifier = ref.read(scanNotifierProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ตรวจสอบข้อมูลผลิตภัณฑ์'),
+        title: Text(l10n.verifyProductInfo),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: widget.onBack,
@@ -75,40 +77,40 @@ class _VerifyProductScreenState extends ConsumerState<VerifyProductScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'ยืนยันข้อมูลก่อนทำการวิเคราะห์',
+              l10n.confirmBeforeAnalysis,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
             ),
             const SizedBox(height: 8),
             Text(
-              'ตรวจสอบความถูกต้องของส่วนผสม เพื่อผลลัพธ์ที่แม่นยำที่สุด',
+              l10n.verifyIngredientsHint,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             TextField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'ชื่อผลิตภัณฑ์ (จำเป็น)',
-                hintText: 'เช่น UV Water Serum',
+              decoration: InputDecoration(
+                labelText: l10n.productNameRequired,
+                hintText: l10n.productNameHint,
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _brandCtrl,
-              decoration: const InputDecoration(
-                labelText: 'แบรนด์ (ไม่จำเป็น)',
-                hintText: 'เช่น MizuMi',
+              decoration: InputDecoration(
+                labelText: l10n.brandOptional,
+                hintText: l10n.brandHint,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              'รายชื่อส่วนผสม (${_ingredients.length})',
+              l10n.ingredientListCount(_ingredients.length),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _ingredientInputCtrl,
               decoration: InputDecoration(
-                hintText: 'พิมพ์ชื่อส่วนผสมเพื่อเพิ่ม เช่น Niacinamide',
+                hintText: l10n.addIngredientHint,
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
                   onPressed: _addIngredient,
@@ -126,8 +128,8 @@ class _VerifyProductScreenState extends ConsumerState<VerifyProductScreen> {
                   border: Border.all(color: AppColors.mintBg),
                 ),
                 child: Text(
-                  'ยังไม่มีส่วนผสมในรายการ\nกรุณาเพิ่มส่วนผสมเพื่อการวิเคราะห์โดย AI',
-                  style: TextStyle(color: AppColors.textSecondary),
+                  l10n.noIngredientsYet,
+                  style: const TextStyle(color: AppColors.textSecondary),
                   textAlign: TextAlign.center,
                 ),
               )
@@ -155,7 +157,7 @@ class _VerifyProductScreenState extends ConsumerState<VerifyProductScreen> {
               final name = _nameCtrl.text.trim();
               if (name.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('กรุณากรอกชื่อผลิตภัณฑ์')),
+                  SnackBar(content: Text(l10n.pleaseEnterProductName)),
                 );
                 return;
               }
@@ -166,7 +168,7 @@ class _VerifyProductScreenState extends ConsumerState<VerifyProductScreen> {
               );
               notifier.analyzeAndSave(finalProd);
             },
-            child: const Text('วิเคราะห์ความเหมาะสมด้วย AI'),
+            child: Text(l10n.analyzeWithAI),
           ),
         ),
       ),

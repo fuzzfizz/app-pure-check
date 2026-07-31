@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -17,13 +18,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _loading = false;
   String? _error;
 
-  Future<void> _register() async {
-    if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
-      setState(() => _error = 'กรุณากรอกข้อมูลให้ครบถ้วน');
+  Future<void> _register(AppLocalizations l10n) async {
+    if (_emailCtrl.text.trim().isEmpty) {
+      setState(() => _error = l10n.pleaseEnterEmail);
+      return;
+    }
+    if (_passCtrl.text.isEmpty) {
+      setState(() => _error = l10n.pleaseEnterPassword);
+      return;
+    }
+    if (_confirmCtrl.text.isEmpty) {
+      setState(() => _error = l10n.pleaseConfirmPassword);
       return;
     }
     if (_passCtrl.text != _confirmCtrl.text) {
-      setState(() => _error = 'รหัสผ่านไม่ตรงกัน');
+      setState(() => _error = l10n.passwordMismatch);
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -36,7 +45,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      setState(() => _error = l10n.registerFailed(e.toString()));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -52,6 +61,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -60,27 +71,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 48),
-              Text('สร้างบัญชีใหม่', style: Theme.of(context).textTheme.displayLarge),
+              Text(l10n.register, style: Theme.of(context).textTheme.displayLarge),
               const SizedBox(height: 8),
-              Text('สมัครสมาชิกเพื่อเริ่มวิเคราะห์ส่วนผสม',
+              Text(l10n.introSubtitle,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: 40),
               TextField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'อีเมล'),
+                decoration: InputDecoration(labelText: l10n.email),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passCtrl,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'รหัสผ่าน'),
+                decoration: InputDecoration(labelText: l10n.password),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _confirmCtrl,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'ยืนยันรหัสผ่าน'),
+                decoration: InputDecoration(labelText: l10n.confirmPassword),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
@@ -88,13 +99,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ],
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _loading ? null : _register,
-                child: _loading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('สมัครสมาชิก'),
+                onPressed: _loading ? null : () => _register(l10n),
+                child: _loading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                    : Text(l10n.register),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => context.go('/login'),
-                child: const Text('มีบัญชีแล้ว? เข้าสู่ระบบ'),
+                child: Text('${l10n.alreadyHaveAccount} ${l10n.loginHere}'),
               ),
             ],
           ),

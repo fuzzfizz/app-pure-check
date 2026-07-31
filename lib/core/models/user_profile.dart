@@ -1,3 +1,6 @@
+import 'package:flutter/widgets.dart';
+import '../l10n/app_localizations.dart';
+
 enum SkinType { oily, dry, combination, normal, sensitive }
 
 extension SkinTypeX on SkinType {
@@ -10,6 +13,18 @@ extension SkinTypeX on SkinType {
       case SkinType.sensitive: return 'แพ้ง่าย';
     }
   }
+
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (this) {
+      case SkinType.oily: return l10n.skinOily;
+      case SkinType.dry: return l10n.skinDry;
+      case SkinType.combination: return l10n.skinCombination;
+      case SkinType.normal: return l10n.skinNormal;
+      case SkinType.sensitive: return l10n.skinSensitive;
+    }
+  }
+
   String get value => name;
   static SkinType fromString(String s) =>
       SkinType.values.firstWhere((e) => e.name == s, orElse: () => SkinType.normal);

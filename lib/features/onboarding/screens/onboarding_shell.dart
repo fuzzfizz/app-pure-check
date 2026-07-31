@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import 'step_skin_type.dart';
 import 'step_skin_conditions.dart';
@@ -40,6 +41,7 @@ class _OnboardingShellState extends ConsumerState<OnboardingShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // If we are on the completion screen, hide the shell framework (since it handles its own CTA)
     final isCompleteScreen = _currentStep == _totalSteps - 1;
 
@@ -49,7 +51,7 @@ class _OnboardingShellState extends ConsumerState<OnboardingShell> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ตั้งค่าโปรไฟล์ผิวของคุณ'),
+        title: Text(l10n.skinProfileAndAllergy),
         leading: _currentStep > 0
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -92,7 +94,7 @@ class _OnboardingShellState extends ConsumerState<OnboardingShell> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       foregroundColor: AppColors.primaryDark,
                     ),
-                    child: const Text('ย้อนกลับ'),
+                    child: Text(l10n.onboardingBack),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -100,7 +102,7 @@ class _OnboardingShellState extends ConsumerState<OnboardingShell> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: _next,
-                  child: Text(_currentStep == _totalSteps - 2 ? 'เสร็จสิ้น' : 'ถัดไป'),
+                  child: Text(_currentStep == _totalSteps - 2 ? l10n.onboardingDone : l10n.onboardingNext),
                 ),
               ),
             ],

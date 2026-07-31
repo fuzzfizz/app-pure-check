@@ -1,3 +1,6 @@
+import 'package:flutter/widgets.dart';
+import '../l10n/app_localizations.dart';
+
 enum SafetyLevel { safe, caution, danger }
 
 extension SafetyLevelX on SafetyLevel {
@@ -8,6 +11,16 @@ extension SafetyLevelX on SafetyLevel {
       case SafetyLevel.danger: return 'พบสารที่แพ้';
     }
   }
+
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (this) {
+      case SafetyLevel.safe: return l10n.safe;
+      case SafetyLevel.caution: return l10n.caution;
+      case SafetyLevel.danger: return l10n.danger;
+    }
+  }
+
   static SafetyLevel fromString(String s) => SafetyLevel.values.firstWhere(
         (e) => e.name == s,
         orElse: () => SafetyLevel.caution,

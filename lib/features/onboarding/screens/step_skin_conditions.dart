@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/onboarding_provider.dart';
 
@@ -8,21 +9,22 @@ class StepSkinConditions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final onboardingState = ref.watch(onboardingNotifierProvider);
     final notifier = ref.read(onboardingNotifierProvider.notifier);
 
     final conditions = [
-      _ConditionItem('acne_prone', 'เป็นสิวง่าย / ผิวมันเป็นสิว', Icons.bug_report_rounded),
-      _ConditionItem('eczema', 'โรคผื่นภูมิแพ้ผิวหนัง (Eczema)', Icons.masks_rounded),
-      _ConditionItem('rosacea', 'โรคผิวหนังอักเสบโรซาเชีย (Rosacea)', Icons.wb_twilight_rounded),
-      _ConditionItem('psoriasis', 'โรคสะเก็ดเงิน (Psoriasis)', Icons.coronavirus_rounded),
-      _ConditionItem('none', 'ไม่มีภาวะโรคผิวหนังข้างต้น', Icons.healing_rounded),
+      _ConditionItem('acne_prone', l10n.conditionAcneProne, Icons.bug_report_rounded),
+      _ConditionItem('eczema', l10n.conditionEczema, Icons.masks_rounded),
+      _ConditionItem('rosacea', l10n.conditionRosacea, Icons.wb_twilight_rounded),
+      _ConditionItem('psoriasis', l10n.conditionPsoriasis, Icons.coronavirus_rounded),
+      _ConditionItem('none', l10n.localeName == 'en' ? 'None of the above' : 'ไม่มีภาวะโรคผิวหนังข้างต้น', Icons.healing_rounded),
     ];
 
     final healthFlags = [
-      _ConditionItem('pregnant', 'กำลังตั้งครรภ์ (Pregnancy)', Icons.pregnant_woman_rounded),
-      _ConditionItem('breastfeeding', 'กำลังให้นมบุตร (Breastfeeding)', Icons.baby_changing_station_rounded),
-      _ConditionItem('prescribed_actives', 'กำลังใช้ยารักษาสิว/ยาจากแพทย์', Icons.medical_services_rounded),
+      _ConditionItem('pregnant', l10n.localeName == 'en' ? 'Pregnant' : 'กำลังตั้งครรภ์ (Pregnancy)', Icons.pregnant_woman_rounded),
+      _ConditionItem('breastfeeding', l10n.localeName == 'en' ? 'Breastfeeding' : 'กำลังให้นมบุตร (Breastfeeding)', Icons.baby_changing_station_rounded),
+      _ConditionItem('prescribed_actives', l10n.localeName == 'en' ? 'Using prescribed skincare actives' : 'กำลังใช้ยารักษาสิว/ยาจากแพทย์', Icons.medical_services_rounded),
     ];
 
     return SingleChildScrollView(
@@ -31,17 +33,17 @@ class StepSkinConditions extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'ภาวะผิวและข้อควรระวังด้านสุขภาพ',
+            l10n.skinConditionsQuestion,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
           ),
           const SizedBox(height: 8),
           Text(
-            'เลือกภาวะผิวหรือปัจจัยที่ส่งผลต่อการใช้ผลิตภัณฑ์ของคุณ (เลือกได้มากกว่าหนึ่ง)',
+            l10n.skinConditionsHint,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 24),
           Text(
-            'ภาวะผิวหนัง',
+            l10n.skinConditions,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: 12),
@@ -71,7 +73,7 @@ class StepSkinConditions extends ConsumerWidget {
           }),
           const SizedBox(height: 24),
           Text(
-            'ข้อควรระวังด้านสุขภาพ',
+            l10n.localeName == 'en' ? 'Health Precautions' : 'ข้อควรระวังด้านสุขภาพ',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: 12),

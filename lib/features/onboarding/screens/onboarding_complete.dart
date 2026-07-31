@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/onboarding_provider.dart';
@@ -10,8 +11,18 @@ class OnboardingComplete extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(onboardingNotifierProvider);
     final notifier = ref.read(onboardingNotifierProvider.notifier);
+
+    final summaryTitle = l10n.localeName == 'en' ? 'Profile Summary:' : 'สรุปโปรไฟล์ของคุณ:';
+    final skinTypeLabel = l10n.localeName == 'en' ? 'Skin Type: ' : 'ประเภทผิว: ';
+    final skinCondLabel = l10n.localeName == 'en' ? 'Skin Conditions: ' : 'ภาวะผิวหนัง/ข้อควรระวัง: ';
+    final allergensLabel = l10n.localeName == 'en' ? 'Allergens: ' : 'สารที่แพ้ที่ระบุ: ';
+    final concernsLabel = l10n.localeName == 'en' ? 'Skin Concerns: ' : 'ความกังวลผิว: ';
+    final noneLabel = l10n.localeName == 'en' ? 'None' : 'ไม่มี';
+    final itemsSuffix = l10n.localeName == 'en' ? ' items' : ' รายการ';
+    final speciesSuffix = l10n.localeName == 'en' ? ' types' : ' ชนิด';
 
     return Scaffold(
       body: SafeArea(
@@ -31,13 +42,13 @@ class OnboardingComplete extends ConsumerWidget {
               ),
               const SizedBox(height: 32),
               Text(
-                'ตั้งค่าโปรไฟล์ผิวของคุณเรียบร้อย!',
+                l10n.onboardingCompleteTitle,
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 24),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
-                'PureCheck พร้อมวิเคราะห์ความปลอดภัยของสารเคมีและส่วนผสมที่เหมาะกับผิวคุณแล้ว',
+                l10n.onboardingCompleteMessage,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -51,12 +62,12 @@ class OnboardingComplete extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('สรุปโปรไฟล์ของคุณ:', style: Theme.of(context).textTheme.titleMedium),
+                    Text(summaryTitle, style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 12),
-                    Text('• ประเภทผิว: ${state.skinType.labelTh}'),
-                    Text('• ภาวะผิวหนัง/ข้อควรระวัง: ${state.skinConditions.isEmpty ? "ไม่มี" : state.skinConditions.length} รายการ'),
-                    Text('• สารที่แพ้ที่ระบุ: ${state.allergens.isEmpty ? "ไม่มี" : state.allergens.length} ชนิด'),
-                    Text('• ความกังวลผิว: ${state.skinConcerns.isEmpty ? "ไม่มี" : state.skinConcerns.length} รายการ'),
+                    Text('• $skinTypeLabel${state.skinType.label(context)}'),
+                    Text('• $skinCondLabel${state.skinConditions.isEmpty ? noneLabel : "${state.skinConditions.length}$itemsSuffix"}'),
+                    Text('• $allergensLabel${state.allergens.isEmpty ? noneLabel : "${state.allergens.length}$speciesSuffix"}'),
+                    Text('• $concernsLabel${state.skinConcerns.isEmpty ? noneLabel : "${state.skinConcerns.length}$itemsSuffix"}'),
                   ],
                 ),
               ),
@@ -85,7 +96,7 @@ class OnboardingComplete extends ConsumerWidget {
                         height: 24,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
-                    : const Text('เริ่มสแกนผลิตภัณฑ์แรกเลย!'),
+                    : Text(l10n.startUsing),
               ),
               const SizedBox(height: 24),
             ],

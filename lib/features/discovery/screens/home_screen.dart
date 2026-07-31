@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/analysis_result.dart';
 import '../../../core/theme/app_theme.dart';
@@ -14,6 +15,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final historyAsync = ref.watch(scanHistoryProvider);
     final profileAsync = ref.watch(currentProfileProvider);
 
@@ -56,7 +58,7 @@ class HomeScreen extends ConsumerWidget {
                 // Header Welcome Card
                 profileAsync.when(
                   data: (profile) {
-                    final skinTypeLabel = profile?.skinType.labelTh ?? 'ไม่ระบุ';
+                    final skinTypeLabel = profile?.skinType.label(context) ?? l10n.notSpecified;
                     return Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -67,7 +69,7 @@ class HomeScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'สวัสดีครับ!',
+                            l10n.hello,
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
                           ),
                           const SizedBox(height: 6),
@@ -76,7 +78,7 @@ class HomeScreen extends ConsumerWidget {
                               const Icon(Icons.face_rounded, color: AppColors.primaryDark, size: 18),
                               const SizedBox(width: 8),
                               Text(
-                                'โปรไฟล์ผิวของคุณ: ผิว$skinTypeLabel',
+                                l10n.skinProfileLabel(skinTypeLabel),
                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                       color: AppColors.textPrimary,
                                       fontWeight: FontWeight.w600,
@@ -115,7 +117,7 @@ class HomeScreen extends ConsumerWidget {
                         const Icon(Icons.search_rounded, color: AppColors.textSecondary),
                         const SizedBox(width: 12),
                         Text(
-                          'ค้นหาผลิตภัณฑ์หรือส่วนผสม...',
+                          l10n.searchHint,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: AppColors.textHint,
                                 fontSize: 16,
@@ -150,12 +152,12 @@ class HomeScreen extends ConsumerWidget {
                       const Icon(Icons.qr_code_scanner_rounded, size: 64, color: AppColors.white),
                       const SizedBox(height: 16),
                       Text(
-                        'วิเคราะห์ส่วนผสมด่วน',
+                        l10n.quickAnalysis,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.white),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'สแกนบาร์โค้ดข้างกล่องเครื่องสำอางเพื่อเริ่มต้น',
+                        l10n.scanBarcodeHint,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.white.withAlpha(220)),
                         textAlign: TextAlign.center,
                       ),
@@ -171,12 +173,12 @@ class HomeScreen extends ConsumerWidget {
                           minimumSize: const Size.fromHeight(50),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.camera_alt_rounded),
-                            SizedBox(width: 8),
-                            Text('เปิดกล้องสแกน'),
+                            const Icon(Icons.camera_alt_rounded),
+                            const SizedBox(width: 8),
+                            Text(l10n.openCameraScanner),
                           ],
                         ),
                       ),
@@ -190,12 +192,12 @@ class HomeScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'ประวัติการสแกนล่าสุด',
+                      l10n.recentScanHistory,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18),
                     ),
                     TextButton(
                       onPressed: () => context.push('/history'),
-                      child: const Text('ดูทั้งหมด'),
+                      child: Text(l10n.viewAll),
                     ),
                   ],
                 ),
@@ -209,11 +211,11 @@ class HomeScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(vertical: 32),
                         child: Column(
                           children: [
-                            Icon(Icons.history_rounded, size: 48, color: AppColors.textHint),
+                            const Icon(Icons.history_rounded, size: 48, color: AppColors.textHint),
                             const SizedBox(height: 12),
                             Text(
-                              'ยังไม่มีประวัติการสแกน\nกดปุ่มสแกนด้านบนเพื่อเริ่มตรวจสอบส่วนผสมผลิตภัณฑ์',
-                              style: TextStyle(color: AppColors.textSecondary),
+                              l10n.noScanHistory,
+                              style: const TextStyle(color: AppColors.textSecondary),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -267,7 +269,7 @@ class HomeScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const SizedBox(height: 100, child: Center(child: CircularProgressIndicator())),
-                  error: (e, __) => Text('เกิดข้อผิดพลาดในการโหลดข้อมูล: $e'),
+                  error: (e, __) => Text(l10n.errorLoadingData(e.toString())),
                 ),
               ],
             ),

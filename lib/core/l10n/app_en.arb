@@ -1,6 +1,18 @@
 {
+  "@@locale": "en",
+
   "appTitle": "PureCheck",
+
   "welcome": "Welcome",
+  "hello": "Hello!",
+  "skinProfileLabel": "Your Skin Profile: {skinType}",
+  "@skinProfileLabel": {
+    "placeholders": {
+      "skinType": { "type": "String" }
+    }
+  },
+  "notSpecified": "Not specified",
+
   "scanBarcode": "Scan Barcode",
   "verifyProduct": "Verify Product",
   "ingredients": "Ingredients",
@@ -10,8 +22,245 @@
   "logout": "Logout",
   "save": "Save",
   "cancel": "Cancel",
+  "ok": "OK",
+  "add": "Add",
+  "tryAgain": "Try Again",
+  "back": "Back",
   "searchHint": "Search products or ingredients...",
   "safe": "Safe",
   "caution": "Caution",
-  "danger": "Allergen Found"
+  "danger": "Allergen Found",
+  "errorGeneric": "Error occurred: {error}",
+  "@errorGeneric": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "quickAnalysis": "Quick Ingredient Analysis",
+  "scanBarcodeHint": "Scan the barcode on the product packaging to start",
+  "openCameraScanner": "Open Camera Scanner",
+  "recentScanHistory": "Recent Scan History",
+  "viewAll": "View All",
+  "noScanHistory": "No scan history yet\nTap the scan button above to start verifying product ingredients",
+  "errorLoadingData": "Error loading data: {error}",
+  "@errorLoadingData": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "enterBarcodeManually": "Enter Barcode Manually",
+  "enterBarcodeNumber": "Enter Barcode Number",
+  "barcodeHintExample": "e.g., 8851234567890",
+  "cameraPermissionRequired": "Camera Permission Required",
+  "cameraPermissionDeniedPermanent": "Camera permission was permanently denied. Please enable it in the app settings to use the barcode scanner.",
+  "cameraPermissionNeeded": "The app needs camera access to scan product barcodes.",
+  "openSettings": "Open Settings",
+  "requestPermissionAgain": "Request Again",
+  "checkingCameraPermission": "Checking camera permission...",
+  "cameraError": "Unable to open camera or device is not supported for scanning",
+  "cameraFallbackHint": "You can still use the scanning feature by entering the barcode number manually",
+  "pointCameraAtBarcode": "Point the camera at the product barcode to start scanning",
+  "searchingProduct": "Searching for product info...",
+  "analysisError": "Analysis Error",
+  "cannotScanNow": "Cannot perform scan at this moment",
+
+  "verifyProductInfo": "Verify Product Info",
+  "confirmBeforeAnalysis": "Confirm Info Before Analysis",
+  "verifyIngredientsHint": "Verify ingredient accuracy for the most precise AI analysis",
+  "productNameRequired": "Product Name (Required)",
+  "productNameHint": "e.g., UV Water Serum",
+  "brandOptional": "Brand (Optional)",
+  "brandHint": "e.g., MizuMi",
+  "ingredientListCount": "Ingredient List ({count})",
+  "@ingredientListCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "addIngredientHint": "Type ingredient name to add, e.g., Niacinamide",
+  "noIngredientsYet": "No ingredients in the list\nPlease add ingredients for AI analysis",
+  "pleaseEnterProductName": "Please enter a product name",
+  "analyzeWithAI": "Analyze Suitability with AI",
+
+  "productNotFound": "Product Not Found",
+  "barcodeNotFoundMessage": "Barcode: {barcode} not found in the system. You can manually enter the ingredients to start suitability analysis.",
+  "@barcodeNotFoundMessage": {
+    "placeholders": {
+      "barcode": { "type": "String" }
+    }
+  },
+  "allIngredientsSeparated": "All Ingredients (separated by comma ,)",
+  "ingredientsPlaceholder": "Water, Niacinamide, Glycerin, Phenoxyethanol...",
+  "pleaseEnterIngredients": "Please enter ingredients",
+  "doneAndContinue": "Done & Proceed to Next Step",
+
+  "loadingCopy1": "Retrieving product ingredients...",
+  "loadingCopy2": "Analyzing ingredients against your skin type...",
+  "loadingCopy3": "Checking your allergy history...",
+  "loadingCopy4": "Analyzing suitability for your profile...",
+  "aiAnalyzing": "AI is Analyzing",
+  "referenceProfile": "Reference: {skinType} Skin Profile",
+  "@referenceProfile": {
+    "placeholders": {
+      "skinType": { "type": "String" }
+    }
+  },
+
+  "analysisResults": "Analysis Results",
+  "noAnalysisResults": "No analysis result found",
+  "suitableForSkin": "Suitable for your skin",
+  "useWithCaution": "Use with caution",
+  "avoidProduct": "Avoid this product",
+  "flaggedChemicals": "Flagged Ingredients to Watch Out",
+  "markAsAllergen": "Mark as allergic to this ingredient",
+  "aiSummary": "AI Analysis Summary",
+  "analyzedByGemini": "Analyzed by Gemini AI",
+  "detailedBreakdown": "Individual Ingredient Breakdown Analysis",
+  "noIngredientData": "No ingredient data found in the system",
+  "highRiskIngredients": "High-Risk Ingredients (Danger)",
+  "cautionIngredients": "Ingredients to Avoid/Caution",
+  "safeIngredients": "Safe Ingredients",
+  "helpCommunity": "Help Community: Confirm & Submit Info",
+  "thankYouCommunity": "Thank you for confirming the product data for the community!",
+  "addedAllergen": "Added {name} to your allergy history",
+  "@addedAllergen": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "functionProperty": "Function/Property: {value}",
+  "@functionProperty": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "backToHome": "Back to Home",
+
+  "searchBrandsHint": "Search brand name, product name, or chemical...",
+  "tabProducts": "Products",
+  "tabIngredients": "Ingredients",
+  "typeToSearchProducts": "Type above to search for products",
+  "noProductsFound": "No matching products found",
+  "unknownBrand": "Unspecified Brand",
+  "typeIngredientToCheck": "Type above to search ingredients and check allergy history",
+
+  "language": "Language",
+  "displayLanguage": "Display Language",
+  "helpAndSupport": "Help & Support",
+  "aboutPureCheck": "About PureCheck",
+  "signOut": "Sign Out",
+  "signOutFailed": "Sign out failed: {error}",
+  "@signOutFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "aboutDescription": "AI-powered skincare & cosmetic ingredient safety analysis customized to your skin profile.",
+
+  "skinProfileAndAllergy": "Skin Profile & Allergy History",
+  "skinType": "Skin Type",
+  "skinConditions": "Skin Conditions / Health Precautions",
+  "skinConcerns": "Skin Concerns",
+  "yourAllergens": "Your Allergens",
+  "noAllergensRecorded": "No allergens recorded yet",
+  "addAllergen": "Add Allergen",
+  "allergenNameHint": "Chemical name, e.g., Fragrance, Alcohol",
+  "profileNotFound": "Skin profile not found",
+  "skinTypePrefix": "Skin type: ",
+
+  "skinOily": "Oily",
+  "skinDry": "Dry",
+  "skinCombination": "Combination",
+  "skinNormal": "Normal",
+  "skinSensitive": "Sensitive",
+
+  "conditionAcneProne": "Acne-prone / Oily acne-prone",
+  "conditionEczema": "Eczema (Atopic Dermatitis)",
+  "conditionRosacea": "Rosacea",
+  "conditionPsoriasis": "Psoriasis",
+
+  "concernAcne": "Acne",
+  "concernDarkSpots": "Dark Spots / Melasma",
+  "concernWrinkles": "Wrinkles / Anti-aging",
+  "concernPores": "Enlarged Pores",
+  "concernDullness": "Dullness / Uneven Skin Tone",
+  "concernRedness": "Redness / Easily Irritated",
+  "concernDehydrated": "Dehydrated / Dry Skin",
+
+  "allScanHistory": "All Scan History",
+  "noScanHistoryYet": "You have no scan history",
+
+  "allIngredientsCount": "All Ingredients ({count})",
+  "@allIngredientsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "noIngredientInfo": "No ingredient information for this product",
+  "analyzeForMySkin": "Analyze for my skin profile",
+  "analyzingAgainstProfile": "Analyzing ingredients against your profile...",
+
+  "allergyHistoryYes": "You are allergic to this ingredient",
+  "allergyHistoryNo": "Safe for you (No allergy history)",
+  "aboutIngredient": "Ingredient Information",
+  "ingredientGenericInfo": "This chemical is commonly used as a solvent, cleanser, or active ingredient in cosmetics. Always check for skin irritation when starting any new product.",
+
+  "login": "Login",
+  "register": "Register",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "forgotPassword": "Forgot Password?",
+  "noAccount": "Don't have an account?",
+  "alreadyHaveAccount": "Already have an account?",
+  "registerHere": "Register here",
+  "loginHere": "Login here",
+  "loginFailed": "Login failed: {error}",
+  "@loginFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "registerFailed": "Registration failed: {error}",
+  "@registerFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "passwordMismatch": "Passwords do not match",
+
+  "introTitle": "PureCheck",
+  "introSubtitle": "AI cosmetic ingredient analysis",
+  "introDescription": "Verify safety customized for your skin profile",
+  "getStarted": "Get Started",
+
+  "onboardingNext": "Next",
+  "onboardingBack": "Back",
+  "onboardingSkip": "Skip",
+  "onboardingDone": "Done",
+  "onboardingStepOf": "Step {current} of {total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "skinTypeQuestion": "What is your skin type?",
+  "skinTypeHint": "Select the skin type that matches you best",
+
+  "skinConditionsQuestion": "Do you have any skin conditions?",
+  "skinConditionsHint": "Select all that apply (or skip)",
+
+  "skinConcernsQuestion": "What are your skin concerns?",
+  "skinConcernsHint": "Select all that apply to you",
+
+  "allergensQuestion": "Do you have any cosmetic allergy history?",
+  "allergensHint": "Add chemicals you are allergic to (or skip)",
+
+  "onboardingCompleteTitle": "All set!",
+  "onboardingCompleteMessage": "Your profile is saved. You can now start scanning products.",
+  "startUsing": "Start Using PureCheck",
+
+  "pleaseEnterEmail": "Please enter an email",
+  "pleaseEnterPassword": "Please enter a password",
+  "pleaseConfirmPassword": "Please confirm your password"
 }

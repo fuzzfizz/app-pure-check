@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/search_provider.dart';
 import 'product_detail_screen.dart';
@@ -34,6 +35,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final searchState = ref.watch(searchNotifierProvider);
 
     return Scaffold(
@@ -41,8 +43,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
         title: TextField(
           controller: _searchCtrl,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'ค้นหาชื่อแบรนด์ ผลิตภัณฑ์ หรือสารเคมี...',
+          decoration: InputDecoration(
+            hintText: l10n.searchBrandsHint,
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
@@ -55,9 +57,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
           indicatorColor: AppColors.primary,
           labelColor: AppColors.textPrimary,
           unselectedLabelColor: AppColors.textSecondary,
-          tabs: const [
-            Tab(text: 'ผลิตภัณฑ์ (Products)'),
-            Tab(text: 'สารเคมี (Ingredients)'),
+          tabs: [
+            Tab(text: l10n.tabProducts),
+            Tab(text: l10n.tabIngredients),
           ],
         ),
       ),
@@ -67,15 +69,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
               controller: _tabCtrl,
               children: [
                 // Products list
-                _buildProductResults(searchState),
+                _buildProductResults(searchState, l10n),
                 // Ingredients list (derived from matching products or typing search)
-                _buildIngredientResults(searchState),
+                _buildIngredientResults(searchState, l10n),
               ],
             ),
     );
   }
 
-  Widget _buildProductResults(SearchState state) {
+  Widget _buildProductResults(SearchState state, AppLocalizations l10n) {
     if (state.results.isEmpty) {
       return Center(
         child: Padding(
@@ -83,13 +85,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.bubble_chart_outlined, size: 48, color: AppColors.textHint),
+              const Icon(Icons.bubble_chart_outlined, size: 48, color: AppColors.textHint),
               const SizedBox(height: 16),
               Text(
                 state.query.isEmpty
-                    ? 'พิมพ์ข้อความด้านบนเพื่อค้นหาผลิตภัณฑ์'
-                    : 'ไม่พบผลิตภัณฑ์ที่ค้นหา',
-                style: TextStyle(color: AppColors.textSecondary),
+                    ? l10n.typeToSearchProducts
+                    : l10n.noProductsFound,
+                style: const TextStyle(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -111,7 +113,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
               product.name,
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
-            subtitle: Text(product.brand ?? 'ไม่ระบุแบรนด์'),
+            subtitle: Text(product.brand ?? l10n.unknownBrand),
             trailing: const Icon(Icons.arrow_forward_ios, size: 14),
             onTap: () {
               Navigator.push(
@@ -125,7 +127,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildIngredientResults(SearchState state) {
+  Widget _buildIngredientResults(SearchState state, AppLocalizations l10n) {
     // Generate ingredients from matching product ingredients or show match query
     final List<String> list = [];
     if (state.query.isNotEmpty) {
@@ -147,11 +149,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.science_outlined, size: 48, color: AppColors.textHint),
+              const Icon(Icons.science_outlined, size: 48, color: AppColors.textHint),
               const SizedBox(height: 16),
-              const Text(
-                'พิมพ์ชื่อสารเคมีด้านบนเพื่อตรวจสอบประวัติการแพ้',
-                style: TextStyle(color: AppColors.textSecondary),
+              Text(
+                l10n.typeIngredientToCheck,
+                style: const TextStyle(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],

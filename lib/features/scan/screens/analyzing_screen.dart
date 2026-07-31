@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -16,20 +17,13 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen> {
   int _copyIndex = 0;
   Timer? _timer;
 
-  final List<String> _loadingCopies = [
-    'ดึงข้อมูลส่วนผสมของผลิตภัณฑ์...',
-    'กำลังวิเคราะห์ส่วนผสมเทียบกับสภาพผิวของคุณ...',
-    'ตรวจสอบประวัติภูมิแพ้ของคุณ...',
-    'วิเคราะห์ความเหมาะสมเฉพาะโปรไฟล์ของคุณ...',
-  ];
-
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(milliseconds: 1800), (timer) {
       if (mounted) {
         setState(() {
-          _copyIndex = (_copyIndex + 1) % _loadingCopies.length;
+          _copyIndex = (_copyIndex + 1) % 4; // 4 copies total
         });
       }
     });
@@ -43,7 +37,15 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final profileAsync = ref.watch(currentProfileProvider);
+
+    final loadingCopies = [
+      l10n.loadingCopy1,
+      l10n.loadingCopy2,
+      l10n.loadingCopy3,
+      l10n.loadingCopy4,
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -70,7 +72,7 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen> {
                       Container(
                         width: 80,
                         height: 80,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.mintBg,
                           shape: BoxShape.circle,
                         ),
@@ -86,7 +88,7 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen> {
               ),
               const SizedBox(height: 48),
               Text(
-                'AI กำลังทำการวิเคราะห์',
+                l10n.aiAnalyzing,
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 24),
                 textAlign: TextAlign.center,
               ),
@@ -94,7 +96,7 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen> {
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: Text(
-                  _loadingCopies[_copyIndex],
+                  loadingCopies[_copyIndex],
                   key: ValueKey<int>(_copyIndex),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondary,
@@ -105,8 +107,9 @@ class _AnalyzingScreenState extends ConsumerState<AnalyzingScreen> {
               const SizedBox(height: 32),
               profileAsync.when(
                 data: (profile) {
+                  final skinLabel = profile?.skinType.label(context) ?? l10n.skinNormal;
                   return Text(
-                    'ข้อมูลอ้างอิง: โปรไฟล์ผิว${profile?.skinType.labelTh ?? "ธรรมดา"}',
+                    l10n.referenceProfile(skinLabel),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 12),
                     textAlign: TextAlign.center,
                   );

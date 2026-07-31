@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/product.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/loading_overlay.dart';
@@ -40,6 +41,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Stack(
       children: [
         Scaffold(
@@ -81,13 +84,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 ],
                 const SizedBox(height: 28),
                 Text(
-                  'ส่วนผสมทั้งหมด (${widget.product.ingredients.length})',
+                  l10n.allIngredientsCount(widget.product.ingredients.length),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
                 if (widget.product.ingredients.isEmpty)
                   Text(
-                    'ไม่มีข้อมูลส่วนผสมผลิตภัณฑ์นี้',
+                    l10n.noIngredientInfo,
                     style: TextStyle(color: AppColors.textHint, fontStyle: FontStyle.italic),
                   )
                 else
@@ -109,13 +112,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               padding: const EdgeInsets.all(24),
               child: ElevatedButton(
                 onPressed: _analyzeProduct,
-                child: const Text('วิเคราะห์ความเหมาะสมเฉพาะผิวฉัน'),
+                child: Text(l10n.analyzeForMySkin),
               ),
             ),
           ),
         ),
         if (_loading)
-          const LoadingOverlay(message: 'กำลังวิเคราะห์ส่วนผสมเทียบกับโปรไฟล์ของคุณ...'),
+          LoadingOverlay(message: l10n.analyzingAgainstProfile),
       ],
     );
   }

@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
-  Future<void> _logout(BuildContext context) async {
+  Future<void> _logout(BuildContext context, AppLocalizations l10n) async {
     try {
       await Supabase.instance.client.auth.signOut();
       if (context.mounted) {
@@ -17,7 +18,7 @@ class SettingsScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ออกจากระบบล้มเหลว: $e')),
+          SnackBar(content: Text(l10n.signOutFailed(e.toString()))),
         );
       }
     }
@@ -25,18 +26,20 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('การตั้งค่า'),
+        title: Text(l10n.settings),
       ),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           // Language section
-          _buildSectionHeader('ภาษา (Language)'),
+          _buildSectionHeader(l10n.language),
           ListTile(
             leading: const Icon(Icons.language_rounded, color: AppColors.primary),
-            title: const Text('ภาษาแสดงผล'),
+            title: Text(l10n.displayLanguage),
             trailing: DropdownButton<String>(
               value: ref.watch(localeProvider).languageCode,
               underline: const SizedBox(),
@@ -46,7 +49,7 @@ class SettingsScreen extends ConsumerWidget {
                 }
               },
               items: const [
-                DropdownMenuItem(value: 'th', child: Text('ภาษาไทย')),
+                DropdownMenuItem(value: 'th', child: Text('ภาษาไทย (Thai)')),
                 DropdownMenuItem(value: 'en', child: Text('English')),
               ],
             ),
@@ -54,10 +57,10 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
 
           // Help / Support
-          _buildSectionHeader('ความช่วยเหลือ'),
+          _buildSectionHeader(l10n.helpAndSupport),
           ListTile(
             leading: const Icon(Icons.info_outline_rounded, color: AppColors.primary),
-            title: const Text('เกี่ยวกับ PureCheck'),
+            title: Text(l10n.aboutPureCheck),
             trailing: const Icon(Icons.arrow_forward_ios, size: 14),
             onTap: () {
               showAboutDialog(
@@ -65,8 +68,8 @@ class SettingsScreen extends ConsumerWidget {
                 applicationName: 'PureCheck',
                 applicationVersion: '1.0.0',
                 applicationIcon: const Icon(Icons.spa, color: AppColors.primary, size: 40),
-                children: const [
-                  Text('แอปวิเคราะห์ความปลอดภัยของส่วนผสมในสกินแคร์และเครื่องสำอาง เพื่อความปลอดภัยเฉพาะสภาพผิวของคุณด้วยพลัง AI'),
+                children: [
+                  Text(l10n.aboutDescription),
                 ],
               );
             },
@@ -76,12 +79,12 @@ class SettingsScreen extends ConsumerWidget {
           // Logout Action
           const SizedBox(height: 32),
           ElevatedButton(
-            onPressed: () => _logout(context),
+            onPressed: () => _logout(context, l10n),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.danger,
               foregroundColor: AppColors.white,
             ),
-            child: const Text('ออกจากระบบ (Sign Out)'),
+            child: Text(l10n.signOut),
           ),
         ],
       ),

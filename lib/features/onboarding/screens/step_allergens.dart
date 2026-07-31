@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/allergen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -14,14 +15,6 @@ class StepAllergens extends ConsumerStatefulWidget {
 class _StepAllergensState extends ConsumerState<StepAllergens> {
   int _selectedPath = -1; // -1: Not selected, 0: Knows, 1: Unsure, 2: None
   final _searchCtrl = TextEditingController();
-  final List<String> _commonIrritants = [
-    'Fragrance (น้ำหอม)',
-    'Alcohol (แอลกอฮอล์)',
-    'Parabens (พาราเบน)',
-    'Silicones (ซิลิโคน)',
-    'Mineral Oil (น้ำมันแร่)',
-    'Essential Oils (น้ำมันหอมระเหย)',
-  ];
 
   void _addAllergen(String name, AllergenSeverity severity, List<String> symptoms) {
     final user = ref.read(currentUserProvider);
@@ -44,10 +37,12 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
     ref.read(onboardingNotifierProvider.notifier).addAllergen(allergen);
   }
 
-  void _showAllergenDialog(String name) {
+  void _showAllergenDialog(String name, AppLocalizations l10n) {
     AllergenSeverity selectedSeverity = AllergenSeverity.moderate;
     final List<String> selectedSymptoms = [];
-    final symptoms = ['แดง', 'คัน', 'ผื่น', 'แสบร้อน'];
+    final symptoms = l10n.localeName == 'en'
+        ? const ['Redness', 'Itching', 'Rash', 'Burning']
+        : const ['แดง', 'คัน', 'ผื่น', 'แสบร้อน'];
 
     showDialog(
       context: context,
@@ -55,12 +50,12 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text('ตั้งค่าสารแพ้: $name'),
+              title: Text(l10n.localeName == 'en' ? 'Set up allergen: $name' : 'ตั้งค่าสารแพ้: $name'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('ระดับความรุนแรงของอาการแพ้:'),
+                  Text(l10n.localeName == 'en' ? 'Severity of allergic reaction:' : 'ระดับความรุนแรงของอาการแพ้:'),
                   const SizedBox(height: 8),
                   DropdownButton<AllergenSeverity>(
                     value: selectedSeverity,
@@ -69,14 +64,14 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
                       if (val != null) setState(() => selectedSeverity = val);
                     },
                     items: AllergenSeverity.values.map((e) {
-                      String label = 'ปานกลาง';
-                      if (e == AllergenSeverity.mild) label = 'เล็กน้อย';
-                      if (e == AllergenSeverity.severe) label = 'รุนแรงมาก';
+                      String label = l10n.localeName == 'en' ? 'Moderate' : 'ปานกลาง';
+                      if (e == AllergenSeverity.mild) label = l10n.localeName == 'en' ? 'Mild' : 'เล็กน้อย';
+                      if (e == AllergenSeverity.severe) label = l10n.localeName == 'en' ? 'Severe' : 'รุนแรงมาก';
                       return DropdownMenuItem(value: e, child: Text(label));
                     }).toList(),
                   ),
                   const SizedBox(height: 16),
-                  const Text('อาการที่เกิดขึ้น (เลือกได้มากกว่าหนึ่ง):'),
+                  Text(l10n.localeName == 'en' ? 'Symptoms occurred (select multiple):' : 'อาการที่เกิดขึ้น (เลือกได้มากกว่าหนึ่ง):'),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -102,14 +97,14 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('ยกเลิก'),
+                  child: Text(l10n.cancel),
                 ),
                 TextButton(
                   onPressed: () {
                     _addAllergen(name, selectedSeverity, selectedSymptoms);
                     Navigator.pop(context);
                   },
-                  child: const Text('เพิ่มรายการ'),
+                  child: Text(l10n.add),
                 ),
               ],
             );
@@ -127,8 +122,34 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final onboardingState = ref.watch(onboardingNotifierProvider);
     final notifier = ref.read(onboardingNotifierProvider.notifier);
+
+    final commonIrritants = l10n.localeName == 'en'
+        ? const [
+            'Fragrance',
+            'Alcohol',
+            'Parabens',
+            'Silicones',
+            'Mineral Oil',
+            'Essential Oils',
+          ]
+        : const [
+            'Fragrance (น้ำหอม)',
+            'Alcohol (แอลกอฮอล์)',
+            'Parabens (พาราเบน)',
+            'Silicones (ซิลิโคน)',
+            'Mineral Oil (น้ำมันแร่)',
+            'Essential Oils (น้ำมันหอมระเหย)',
+          ];
+
+    final pathTitle1 = l10n.localeName == 'en' ? 'I know what I\'m allergic to' : 'ฉันรู้สารที่ฉันแพ้';
+    final pathDesc1 = l10n.localeName == 'en' ? 'Specify the chemicals or ingredients you are allergic to directly' : 'ระบุสารเคมีหรือส่วนผสมที่คุณแพ้โดยตรง';
+    final pathTitle2 = l10n.localeName == 'en' ? 'I\'m not sure what I\'m allergic to' : 'ฉันไม่แน่ใจว่าแพ้อะไร';
+    final pathDesc2 = l10n.localeName == 'en' ? 'Check from the list of common skin irritants' : 'ตรวจสอบจากกลุ่มสารก่อระคายเคืองที่พบบ่อย';
+    final pathTitle3 = l10n.localeName == 'en' ? 'I have no allergy history' : 'ฉันไม่มีประวัติการแพ้';
+    final pathDesc3 = l10n.localeName == 'en' ? 'Analyze suitability based solely on your skin type' : 'วิเคราะห์ความเหมาะสมเฉพาะสภาพผิวของคุณ';
 
     if (_selectedPath == -1) {
       return Padding(
@@ -137,36 +158,36 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'ประวัติการแพ้สารเคมีของคุณ',
+              l10n.allergensQuestion,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
             ),
             const SizedBox(height: 8),
             Text(
-              'เลือกเส้นทางที่ตรงกับคุณมากที่สุด เพื่อให้ AI วิเคราะห์อย่างแม่นยำ',
+              l10n.allergensHint,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 32),
             _buildPathCard(
               context,
               0,
-              'ฉันรู้สารที่ฉันแพ้',
-              'ระบุสารเคมีหรือส่วนผสมที่คุณแพ้โดยตรง',
+              pathTitle1,
+              pathDesc1,
               Icons.search_rounded,
             ),
             const SizedBox(height: 16),
             _buildPathCard(
               context,
               1,
-              'ฉันไม่แน่ใจว่าแพ้อะไร',
-              'ตรวจสอบจากกลุ่มสารก่อระคายเคืองที่พบบ่อย',
+              pathTitle2,
+              pathDesc2,
               Icons.help_outline_rounded,
             ),
             const SizedBox(height: 16),
             _buildPathCard(
               context,
               2,
-              'ฉันไม่มีประวัติการแพ้',
-              'วิเคราะห์ความเหมาะสมเฉพาะสภาพผิวของคุณ',
+              pathTitle3,
+              pathDesc3,
               Icons.check_circle_outline_rounded,
             ),
           ],
@@ -185,13 +206,15 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => setState(() => _selectedPath = -1),
               ),
-              Text(
-                _selectedPath == 0
-                    ? 'ค้นหาและระบุสารที่แพ้'
-                    : _selectedPath == 1
-                        ? 'ประเมินจากสารระคายเคืองทั่วไป'
-                        : 'ไม่มีประวัติการแพ้',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18),
+              Expanded(
+                child: Text(
+                  _selectedPath == 0
+                      ? (l10n.localeName == 'en' ? 'Search and specify allergens' : 'ค้นหาและระบุสารที่แพ้')
+                      : _selectedPath == 1
+                          ? (l10n.localeName == 'en' ? 'Evaluate from common irritants' : 'ประเมินจากสารระคายเคืองทั่วไป')
+                          : pathTitle3,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18),
+                ),
               ),
             ],
           ),
@@ -200,13 +223,13 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
             TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'พิมพ์ชื่อสารเคมี เช่น Paraben, Fragrance',
+                hintText: l10n.allergenNameHint,
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
                   onPressed: () {
                     final name = _searchCtrl.text.trim();
                     if (name.isNotEmpty) {
-                      _showAllergenDialog(name);
+                      _showAllergenDialog(name, l10n);
                       _searchCtrl.clear();
                     }
                   },
@@ -215,19 +238,19 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
               onSubmitted: (name) {
                 final text = name.trim();
                 if (text.isNotEmpty) {
-                  _showAllergenDialog(text);
+                  _showAllergenDialog(text, l10n);
                   _searchCtrl.clear();
                 }
               },
             ),
             const SizedBox(height: 20),
-            const Text('รายการสารที่แพ้ที่คุณระบุ:'),
+            Text(l10n.localeName == 'en' ? 'Allergens you specified:' : 'รายการสารที่แพ้ที่คุณระบุ:'),
             const SizedBox(height: 8),
             if (onboardingState.allergens.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Text(
-                  'ยังไม่ได้เพิ่มสารที่แพ้',
+                  l10n.localeName == 'en' ? 'No allergens added yet' : 'ยังไม่ได้เพิ่มสารที่แพ้',
                   style: TextStyle(color: AppColors.textHint, fontStyle: FontStyle.italic),
                   textAlign: TextAlign.center,
                 ),
@@ -247,11 +270,11 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
               ),
           ] else if (_selectedPath == 1) ...[
             Text(
-              'เลือกสารที่คุณเคยใช้แล้วมีอาการแดง คัน แสบ หรือแพ้:',
+              l10n.localeName == 'en' ? 'Select ingredients that have caused redness, itching, burning, or allergy:' : 'เลือกสารที่คุณเคยใช้แล้วมีอาการแดง คัน แสน หรือแพ้:',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
-            ..._commonIrritants.map((name) {
+            ...commonIrritants.map((name) {
               final isSelected = onboardingState.allergens.any((a) => a.ingredientName == name);
               return CheckboxListTile(
                 title: Text(name),
@@ -259,7 +282,7 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
                 activeColor: AppColors.primary,
                 onChanged: (selected) {
                   if (selected == true) {
-                    _showAllergenDialog(name);
+                    _showAllergenDialog(name, l10n);
                   } else {
                     notifier.removeAllergen(name);
                   }
@@ -278,7 +301,7 @@ class _StepAllergensState extends ConsumerState<StepAllergens> {
                   const Icon(Icons.check_circle, size: 64, color: AppColors.safe),
                   const SizedBox(height: 16),
                   Text(
-                    'ยอดเยี่ยม! ระบบจะวิเคราะห์โดยอ้างอิงสภาพผิวและหลีกเลี่ยงส่วนผสมที่อาจก่อให้เกิดการระคายเคืองตามประเภทผิวของคุณแทน',
+                    l10n.localeName == 'en' ? 'Excellent! The system will analyze based on your skin type and avoid ingredients that may cause irritation.' : 'ยอดเยี่ยม! ระบบจะวิเคราะห์โดยอ้างอิงสภาพผิวและหลีกเลี่ยงส่วนผสมที่อาจก่อให้เกิดการระคายเคืองตามประเภทผิวของคุณแทน',
                     style: Theme.of(context).textTheme.bodyLarge,
                     textAlign: TextAlign.center,
                   ),

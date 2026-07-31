@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/analysis_result.dart';
 import '../../../core/models/product.dart';
 import '../../../core/models/allergen.dart';
@@ -24,7 +25,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
   String? _expandedIngredient;
   bool _reporting = false;
 
-  Future<void> _reportAllergen(String name) async {
+  Future<void> _reportAllergen(String name, AppLocalizations l10n) async {
     setState(() => _reporting = true);
     try {
       final user = ref.read(currentUserProvider);
@@ -36,7 +37,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
         id: '',
         userId: user.id,
         ingredientName: name,
-        reactionSymptoms: ['คัน', 'แดง'],
+        reactionSymptoms: const ['คัน', 'แดง'],
         severity: AllergenSeverity.moderate,
         source: AllergenSource.suspected,
       );
@@ -45,13 +46,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('เพิ่ม $name ลงในประวัติการแพ้ของคุณแล้ว')),
+          SnackBar(content: Text(l10n.addedAllergen(name))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+          SnackBar(content: Text(l10n.errorGeneric(e.toString()))),
         );
       }
     } finally {
@@ -61,6 +62,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     // Parse extra params
     final params = widget.extra as Map<String, dynamic>? ?? {};
     final rawProduct = params['product'];
@@ -68,9 +71,9 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
     if (rawProduct == null || rawAnalysis == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('ผลการวิเคราะห์')),
-        body: const Center(
-          child: Text('ไม่พบข้อมูลผลลัพธ์การวิเคราะห์'),
+        appBar: AppBar(title: Text(l10n.analysisResults)),
+        body: Center(
+          child: Text(l10n.noAnalysisResults),
         ),
       );
     }
@@ -86,17 +89,17 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     switch (analysis.overallSafety) {
       case SafetyLevel.safe:
         bannerBg = AppColors.safe;
-        verdictTitle = 'เหมาะสมกับผิวคุณ';
+        verdictTitle = l10n.suitableForSkin;
         verdictIcon = Icons.check_circle_outline_rounded;
         break;
       case SafetyLevel.caution:
         bannerBg = AppColors.caution;
-        verdictTitle = 'ควรระมัดระวัง';
+        verdictTitle = l10n.useWithCaution;
         verdictIcon = Icons.warning_amber_rounded;
         break;
       case SafetyLevel.danger:
         bannerBg = AppColors.danger;
-        verdictTitle = 'หลีกเลี่ยงผลิตภัณฑ์นี้';
+        verdictTitle = l10n.avoidProduct;
         verdictIcon = Icons.dangerous_rounded;
         break;
     }
@@ -106,9 +109,14 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     final cautionList = analysis.ingredientBreakdown.where((e) => e.riskLevel == SafetyLevel.caution).toList();
     final safeList = analysis.ingredientBreakdown.where((e) => e.riskLevel == SafetyLevel.safe).toList();
 
+    // Select summary based on language
+    final summaryText = l10n.localeName == 'en' && analysis.summaryEn.isNotEmpty
+        ? analysis.summaryEn
+        : analysis.summaryTh;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ผลลัพธ์การวิเคราะห์'),
+        title: Text(l10n.analysisResults),
         leading: IconButton(
           icon: const Icon(Icons.home_outlined),
           onPressed: () => context.go('/home'),
@@ -162,7 +170,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                   // Flagged Allergens Section (Only if danger/caution)
                   if (analysis.flaggedIngredients.isNotEmpty) ...[
                     Text(
-                      'สารเคมีที่ควรระวังเป็นพิเศษ',
+                      l10n.flaggedChemicals,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18),
                     ),
                     const SizedBox(height: 12),
@@ -215,14 +223,14 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                               if (flagged.riskLevel != SafetyLevel.danger) ...[
                                 const SizedBox(height: 12),
                                 OutlinedButton(
-                                  onPressed: _reporting ? null : () => _reportAllergen(flagged.name),
+                                  onPressed: _reporting ? null : () => _reportAllergen(flagged.name, l10n),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.danger,
                                     side: const BorderSide(color: AppColors.danger),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                   ),
-                                  child: const Text('ระบุว่าฉันแพ้สารตัวนี้'),
+                                  child: Text(l10n.markAsAllergen),
                                 ),
                               ],
                             ],
@@ -235,7 +243,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
                   // AI Analysis Summary Card
                   Text(
-                    'สรุปผลลัพธ์โดย AI',
+                    l10n.aiSummary,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18),
                   ),
                   const SizedBox(height: 12),
@@ -250,7 +258,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                               const Icon(Icons.auto_awesome, color: AppColors.primaryDark),
                               const SizedBox(width: 12),
                               Text(
-                                'วิเคราะห์โดย Gemini AI',
+                                l10n.analyzedByGemini,
                                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -259,7 +267,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            analysis.summaryTh,
+                            summaryText,
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
                           ),
                         ],
@@ -270,25 +278,25 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
                   // Ingredients Breakdown Header
                   Text(
-                    'การวิเคราะห์รายละเอียดสารแยกตามตัว',
+                    l10n.detailedBreakdown,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18),
                   ),
                   const SizedBox(height: 16),
 
                   // List ingredients
                   if (analysis.ingredientBreakdown.isEmpty)
-                    const Text('ไม่พบข้อมูลส่วนผสมในสารระบบ')
+                    Text(l10n.noIngredientData)
                   else ...[
                     if (dangerList.isNotEmpty) ...[
-                      _buildCategorySection('สารที่มีความเสี่ยงสูง (Danger)', dangerList, AppColors.danger),
+                      _buildCategorySection(l10n.highRiskIngredients, dangerList, AppColors.danger, l10n),
                       const SizedBox(height: 20),
                     ],
                     if (cautionList.isNotEmpty) ...[
-                      _buildCategorySection('สารที่ควรระวัง (Caution)', cautionList, AppColors.caution),
+                      _buildCategorySection(l10n.cautionIngredients, cautionList, AppColors.caution, l10n),
                       const SizedBox(height: 20),
                     ],
                     if (safeList.isNotEmpty) ...[
-                      _buildCategorySection('สารที่ปลอดภัย (Safe)', safeList, AppColors.safe),
+                      _buildCategorySection(l10n.safeIngredients, safeList, AppColors.safe, l10n),
                       const SizedBox(height: 20),
                     ],
                   ],
@@ -311,19 +319,19 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                         await supabaseService.upsertProduct(updatedProduct);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('ขอบคุณที่ร่วมยืนยันข้อมูลผลิตภัณฑ์สำหรับชุมชน!')),
+                            SnackBar(content: Text(l10n.thankYouCommunity)),
                           );
                         }
                       } catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+                            SnackBar(content: Text(l10n.errorGeneric(e.toString()))),
                           );
                         }
                       }
                     },
                     icon: const Icon(Icons.people_outline_rounded),
-                    label: const Text('ช่วยชุมชน: ยืนยันส่งข้อมูล'),
+                    label: Text(l10n.helpCommunity),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.white,
@@ -346,7 +354,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               foregroundColor: AppColors.primaryDark,
             ),
-            child: const Text('กลับหน้าหลัก'),
+            child: Text(l10n.backToHome),
           ),
         ),
       ),
@@ -357,6 +365,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     String title,
     List<IngredientBreakdown> list,
     Color color,
+    AppLocalizations l10n,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,7 +417,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                       const Divider(),
                       const SizedBox(height: 4),
                       Text(
-                        'หน้าที่/คุณสมบัติ: ${ing.function}',
+                        l10n.functionProperty(ing.function!),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: AppColors.textSecondary,
                             ),

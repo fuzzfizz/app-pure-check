@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -50,40 +51,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final profileAsync = ref.watch(currentProfileProvider);
     final allergensAsync = ref.watch(userAllergensProvider);
     final state = ref.watch(profileNotifierProvider);
 
     final conditions = [
-      _ConditionItem('acne_prone', 'เป็นสิวง่าย / ผิวมันเป็นสิว'),
-      _ConditionItem('eczema', 'โรคผื่นภูมิแพ้ผิวหนัง (Eczema)'),
-      _ConditionItem('rosacea', 'โรคผิวหนังอักเสบโรซาเชีย (Rosacea)'),
-      _ConditionItem('psoriasis', 'โรคสะเก็ดเงิน (Psoriasis)'),
+      _ConditionItem('acne_prone', l10n.conditionAcneProne),
+      _ConditionItem('eczema', l10n.conditionEczema),
+      _ConditionItem('rosacea', l10n.conditionRosacea),
+      _ConditionItem('psoriasis', l10n.conditionPsoriasis),
     ];
 
     final concerns = [
-      _ConcernItem('acne', 'สิว'),
-      _ConcernItem('dark_spots', 'ฝ้า/จุดด่างดำ'),
-      _ConcernItem('wrinkles', 'ริ้วรอย'),
-      _ConcernItem('pores', 'รูขุมขนกว้าง'),
-      _ConcernItem('dullness', 'ผิวหมองคล้ำ'),
-      _ConcernItem('redness', 'ผิวแดงระคายเคืองง่าย'),
-      _ConcernItem('dehydrated', 'ผิวขาดน้ำ'),
+      _ConcernItem('acne', l10n.concernAcne),
+      _ConcernItem('dark_spots', l10n.concernDarkSpots),
+      _ConcernItem('wrinkles', l10n.concernWrinkles),
+      _ConcernItem('pores', l10n.concernPores),
+      _ConcernItem('dullness', l10n.concernDullness),
+      _ConcernItem('redness', l10n.concernRedness),
+      _ConcernItem('dehydrated', l10n.concernDehydrated),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('โปรไฟล์ผิว & ประวัติการแพ้'),
+        title: Text(l10n.skinProfileAndAllergy),
       ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('เกิดข้อผิดพลาด: $err')),
+        error: (err, _) => Center(child: Text(l10n.errorGeneric(err.toString()))),
         data: (_) => profileAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('เกิดข้อผิดพลาด: $err')),
+          error: (err, _) => Center(child: Text(l10n.errorGeneric(err.toString()))),
           data: (profile) {
             if (profile == null) {
-              return const Center(child: Text('ไม่พบข้อมูลโปรไฟล์ผิว'));
+              return Center(child: Text(l10n.profileNotFound));
             }
 
             return SingleChildScrollView(
@@ -92,7 +94,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Skin Type
-                  Text('ประเภทผิว', style: Theme.of(context).textTheme.titleMedium),
+                  Text(l10n.skinType, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -111,7 +113,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         items: SkinType.values.map((type) {
                           return DropdownMenuItem(
                             value: type,
-                            child: Text('ผิว${type.labelTh}'),
+                            child: Text(type.label(context)),
                           );
                         }).toList(),
                       ),
@@ -120,7 +122,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: 28),
 
                   // Conditions
-                  Text('ภาวะโรคผิวหนัง/ข้อควรระวัง', style: Theme.of(context).textTheme.titleMedium),
+                  Text(l10n.skinConditions, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -139,7 +141,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: 28),
 
                   // Concerns
-                  Text('ความกังวลผิว', style: Theme.of(context).textTheme.titleMedium),
+                  Text(l10n.skinConcerns, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -161,10 +163,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('สารที่แพ้ของคุณ', style: Theme.of(context).textTheme.titleMedium),
+                      Text(l10n.yourAllergens, style: Theme.of(context).textTheme.titleMedium),
                       IconButton(
                         icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-                        onPressed: _showAddAllergenDialog,
+                        onPressed: () => _showAddAllergenDialog(l10n),
                       ),
                     ],
                   ),
@@ -173,13 +175,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   // Allergens list
                   allergensAsync.when(
                     loading: () => const SizedBox(height: 50, child: Center(child: CircularProgressIndicator())),
-                    error: (err, _) => Text('เกิดข้อผิดพลาด: $err'),
+                    error: (err, _) => Text(l10n.errorGeneric(err.toString())),
                     data: (allergensList) {
                       if (allergensList.isEmpty) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(
-                            'ไม่มีสารที่ระบุประวัติการแพ้',
+                            l10n.noAllergensRecorded,
                             style: TextStyle(color: AppColors.textHint, fontStyle: FontStyle.italic),
                             textAlign: TextAlign.center,
                           ),
@@ -211,16 +213,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void _showAddAllergenDialog() {
+  void _showAddAllergenDialog(AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('เพิ่มสารที่แพ้'),
+          title: Text(l10n.addAllergen),
           content: TextField(
             controller: _allergenSearchCtrl,
-            decoration: const InputDecoration(
-              hintText: 'ชื่อสาร เช่น Fragrance, Alcohol',
+            decoration: InputDecoration(
+              hintText: l10n.allergenNameHint,
             ),
             autofocus: true,
           ),
@@ -230,7 +232,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 _allergenSearchCtrl.clear();
                 Navigator.pop(context);
               },
-              child: const Text('ยกเลิก'),
+              child: Text(l10n.cancel),
             ),
             TextButton(
               onPressed: () {
@@ -241,7 +243,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Navigator.pop(context);
                 }
               },
-              child: const Text('เพิ่ม'),
+              child: Text(l10n.add),
             ),
           ],
         );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 
@@ -37,6 +38,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: AppColors.primary,
       body: Center(
@@ -55,7 +58,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             Text('PureCheck',
               style: Theme.of(context).textTheme.displayLarge?.copyWith(color: AppColors.white)),
             const SizedBox(height: 8),
-            Text('วิเคราะห์ส่วนผสม รู้ก่อนแพ้',
+            Text(l10n.introSubtitle,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.white.withAlpha(204))),
           ],
         ),

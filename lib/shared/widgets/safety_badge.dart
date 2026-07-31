@@ -18,7 +18,7 @@ class SafetyBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bg;
     Color text = AppColors.white;
-    String label = level.labelTh;
+    String label = level.label(context);
 
     switch (level) {
       case SafetyLevel.safe:

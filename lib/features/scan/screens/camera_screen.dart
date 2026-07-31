@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/scan_provider.dart';
 import 'verify_product_screen.dart';
@@ -39,18 +40,18 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // When returning from settings or after permission dialog, re-check
+    // When returning from settings, re-check permission
     if (state == AppLifecycleState.resumed) {
       if (_isReturningFromSettings) {
         _isReturningFromSettings = false;
         _checkAndRequestPermission();
-      } else if (_permissionStatus == _CameraPermissionStatus.granted) {
-        // Resume the scanner if we already have permission
-        _controller?.start();
       }
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
-      // Stop the scanner to release the camera when app goes to background
+      // Do NOT call _controller?.start() here — autoStart: true handles it.
+      // Calling start() when already started triggers an internal error
+      // that causes errorBuilder to fire with "Cannot open camera".
+    } else if (state == AppLifecycleState.paused) {
+      // Only stop on paused (NOT inactive — inactive fires during
+      // permission dialogs and would kill the camera prematurely)
       _controller?.stop();
     }
   }
@@ -115,24 +116,24 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     await openAppSettings();
   }
 
-  void _showManualBarcodeDialog(BuildContext context) {
+  void _showManualBarcodeDialog(BuildContext context, AppLocalizations l10n) {
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('ป้อนหมายเลขบาร์โค้ด'),
+          title: Text(l10n.enterBarcodeNumber),
           content: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              hintText: 'เช่น 8851234567890',
+            decoration: InputDecoration(
+              hintText: l10n.barcodeHintExample,
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('ยกเลิก'),
+              child: Text(l10n.cancel),
             ),
             TextButton(
               onPressed: () {
@@ -142,7 +143,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   ref.read(scanNotifierProvider.notifier).onBarcodeScanned(barcode);
                 }
               },
-              child: const Text('ตกลง'),
+              child: Text(l10n.ok),
             ),
           ],
         );
@@ -150,7 +151,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     );
   }
 
-  Widget _buildPermissionDeniedUI({required bool isPermanent}) {
+  Widget _buildPermissionDeniedUI({required bool isPermanent, required AppLocalizations l10n}) {
     return Container(
       color: Colors.black87,
       child: Center(
@@ -172,9 +173,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'ต้องการสิทธิ์เข้าถึงกล้อง',
-                style: TextStyle(
+              Text(
+                l10n.cameraPermissionRequired,
+                style: const TextStyle(
                   color: AppColors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -184,8 +185,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               const SizedBox(height: 12),
               Text(
                 isPermanent
-                    ? 'คุณได้ปฏิเสธสิทธิ์กล้องแล้ว กรุณาเปิดสิทธิ์ในการตั้งค่าแอปเพื่อใช้งานสแกนบาร์โค้ด'
-                    : 'แอปต้องการเข้าถึงกล้องเพื่อสแกนบาร์โค้ดของผลิตภัณฑ์',
+                    ? l10n.cameraPermissionDeniedPermanent
+                    : l10n.cameraPermissionNeeded,
                 style: const TextStyle(color: Colors.white70, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
@@ -194,7 +195,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 ElevatedButton.icon(
                   onPressed: _openSettings,
                   icon: const Icon(Icons.settings_rounded),
-                  label: const Text('เปิดการตั้งค่า'),
+                  label: Text(l10n.openSettings),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -206,7 +207,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 ElevatedButton.icon(
                   onPressed: _checkAndRequestPermission,
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('ขอสิทธิ์อีกครั้ง'),
+                  label: Text(l10n.requestPermissionAgain),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -216,9 +217,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
-                onPressed: () => _showManualBarcodeDialog(context),
+                onPressed: () => _showManualBarcodeDialog(context, l10n),
                 icon: const Icon(Icons.keyboard_rounded),
-                label: const Text('ป้อนบาร์โค้ดด้วยตัวเอง'),
+                label: Text(l10n.enterBarcodeManually),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white54),
@@ -235,6 +236,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final scanState = ref.watch(scanNotifierProvider);
     final notifier = ref.read(scanNotifierProvider.notifier);
 
@@ -253,7 +255,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       case ScanStep.scanning:
         return Scaffold(
           appBar: AppBar(
-            title: const Text('สแกนบาร์โค้ด'),
+            title: Text(l10n.scanBarcode),
             leading: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () => context.pop(),
@@ -261,23 +263,23 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             actions: [
               IconButton(
                 icon: const Icon(Icons.keyboard_rounded),
-                tooltip: 'ป้อนบาร์โค้ดด้วยตัวเอง',
-                onPressed: () => _showManualBarcodeDialog(context),
+                tooltip: l10n.enterBarcodeManually,
+                onPressed: () => _showManualBarcodeDialog(context, l10n),
               ),
             ],
           ),
-          body: _buildScannerBody(notifier),
+          body: _buildScannerBody(notifier, l10n),
         );
 
       case ScanStep.fetching:
-        return const Scaffold(
+        return Scaffold(
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('กำลังค้นหาข้อมูลผลิตภัณฑ์...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(l10n.searchingProduct),
               ],
             ),
           ),
@@ -309,20 +311,20 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 const Icon(Icons.error_outline_rounded, size: 72, color: AppColors.danger),
                 const SizedBox(height: 24),
                 Text(
-                  'เกิดข้อผิดพลาดในการวิเคราะห์',
+                  l10n.analysisError,
                   style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  scanState.error ?? 'ไม่สามารถดำเนินการสแกนได้ในขณะนี้',
+                  scanState.error ?? l10n.cannotScanNow,
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () => notifier.reset(),
-                  child: const Text('ลองอีกครั้ง'),
+                  child: Text(l10n.tryAgain),
                 ),
               ],
             ),
@@ -331,25 +333,25 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     }
   }
 
-  Widget _buildScannerBody(ScanNotifier notifier) {
+  Widget _buildScannerBody(ScanNotifier notifier, AppLocalizations l10n) {
     switch (_permissionStatus) {
       case _CameraPermissionStatus.checking:
-        return const Center(
+        return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('กำลังตรวจสอบสิทธิ์กล้อง...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(l10n.checkingCameraPermission),
             ],
           ),
         );
 
       case _CameraPermissionStatus.denied:
-        return _buildPermissionDeniedUI(isPermanent: false);
+        return _buildPermissionDeniedUI(isPermanent: false, l10n: l10n);
 
       case _CameraPermissionStatus.permanentlyDenied:
-        return _buildPermissionDeniedUI(isPermanent: true);
+        return _buildPermissionDeniedUI(isPermanent: true, l10n: l10n);
 
       case _CameraPermissionStatus.granted:
         return Stack(
@@ -357,6 +359,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             MobileScanner(
               controller: _controller!,
               errorBuilder: (context, error, child) {
+                debugPrint('MobileScanner error: ${error.errorCode} - ${error.errorDetails?.message}');
                 return Container(
                   color: Colors.black87,
                   child: Center(
@@ -367,22 +370,22 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                         children: [
                           const Icon(Icons.videocam_off_rounded, color: AppColors.white, size: 64),
                           const SizedBox(height: 16),
-                          const Text(
-                            'ไม่สามารถเปิดกล้องได้ หรืออุปกรณ์ไม่รองรับการสแกน',
-                            style: TextStyle(color: AppColors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          Text(
+                            l10n.cameraError,
+                            style: const TextStyle(color: AppColors.white, fontSize: 16, fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'คุณยังคงสามารถใช้ฟังก์ชันสแกนได้โดยการกรอกหมายเลขบาร์โค้ดด้วยตัวเอง',
-                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          Text(
+                            l10n.cameraFallbackHint,
+                            style: const TextStyle(color: Colors.white70, fontSize: 14),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),
                           ElevatedButton.icon(
-                            onPressed: () => _showManualBarcodeDialog(context),
+                            onPressed: () => _showManualBarcodeDialog(context, l10n),
                             icon: const Icon(Icons.keyboard_rounded),
-                            label: const Text('ป้อนบาร์โค้ดด้วยตัวเอง'),
+                            label: Text(l10n.enterBarcodeManually),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
@@ -428,7 +431,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'จ่อกล้องตรงกับบาร์โค้ดผลิตภัณฑ์เพื่อเริ่มสแกน',
+                  l10n.pointCameraAtBarcode,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.white,
                         fontWeight: FontWeight.w600,

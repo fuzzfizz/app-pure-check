@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 class _Slide {
@@ -19,17 +20,19 @@ class _IntroScreenState extends State<IntroScreen> {
   final _controller = PageController();
   int _page = 0;
 
-  final _slides = const [
-    _Slide('สแกนแล้วรู้ว่าแพ้ไหม', 'สแกนบาร์โค้ดผลิตภัณฑ์ รู้ส่วนผสมทันที', Icons.qr_code_scanner_rounded),
-    _Slide('AI วิเคราะห์เฉพาะคุณ', 'ผลวิเคราะห์ปรับตามโปรไฟล์ผิวและประวัติการแพ้ของคุณ', Icons.auto_awesome_rounded),
-    _Slide('ส่วนผสมครบ ตรงไปตรงมา', 'ข้อมูลส่วนผสมชัดเจน พร้อมคำอธิบายเข้าใจง่าย', Icons.science_rounded),
-  ];
-
   @override
   void dispose() { _controller.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final slides = [
+      _Slide(l10n.scanBarcode, l10n.scanBarcodeHint, Icons.qr_code_scanner_rounded),
+      _Slide(l10n.quickAnalysis, l10n.analyzingAgainstProfile, Icons.auto_awesome_rounded),
+      _Slide(l10n.ingredients, l10n.ingredientGenericInfo, Icons.science_rounded),
+    ];
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -37,10 +40,10 @@ class _IntroScreenState extends State<IntroScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _controller,
-                itemCount: _slides.length,
+                itemCount: slides.length,
                 onPageChanged: (i) => setState(() => _page = i),
                 itemBuilder: (context, i) {
-                  final s = _slides[i];
+                  final s = slides[i];
                   return Padding(
                     padding: const EdgeInsets.all(32),
                     child: Column(
@@ -70,7 +73,7 @@ class _IntroScreenState extends State<IntroScreen> {
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_slides.length, (i) => AnimatedContainer(
+              children: List.generate(slides.length, (i) => AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 margin: const EdgeInsets.all(4),
                 width: i == _page ? 24 : 8,
@@ -86,13 +89,13 @@ class _IntroScreenState extends State<IntroScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: ElevatedButton(
                 onPressed: () => context.go('/register'),
-                child: const Text('เริ่มต้นใช้งาน'),
+                child: Text(l10n.getStarted),
               ),
             ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => context.go('/login'),
-              child: const Text('มีบัญชีแล้ว? เข้าสู่ระบบ'),
+              child: Text('${l10n.alreadyHaveAccount} ${l10n.loginHere}'),
             ),
             const SizedBox(height: 24),
           ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -13,6 +14,7 @@ class IngredientDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     // Check if user is allergic to this ingredient
     final supabaseService = ref.read(supabaseServiceProvider);
 
@@ -59,7 +61,7 @@ class IngredientDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        isAllergic ? 'มีประวัติแพ้ส่วนผสมนี้' : 'ปลอดภัยสำหรับคุณ (ไม่มีประวัติการแพ้)',
+                        isAllergic ? l10n.allergyHistoryYes : l10n.allergyHistoryNo,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: isAllergic ? AppColors.danger : AppColors.textPrimary,
                               fontWeight: FontWeight.bold,
@@ -71,12 +73,12 @@ class IngredientDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  'ข้อมูลเกี่ยวกับส่วนผสม',
+                  l10n.aboutIngredient,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'สารเคมีชนิดนี้มักใช้ในการเป็นสารทำละลาย สารทำความสะอาด หรือสารออกฤทธิ์ในเครื่องสำอาง ทั้งนี้ควรสังเกตการระคายเคืองผิวทุกครั้งที่เริ่มใช้ผลิตภัณฑ์ใหม่',
+                  l10n.ingredientGenericInfo,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
                 ),
               ],

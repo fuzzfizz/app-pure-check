@@ -1,6 +1,18 @@
 {
+  "@@locale": "th",
+
   "appTitle": "PureCheck",
+
   "welcome": "ยินดีต้อนรับ",
+  "hello": "สวัสดีครับ!",
+  "skinProfileLabel": "โปรไฟล์ผิวของคุณ: ผิว{skinType}",
+  "@skinProfileLabel": {
+    "placeholders": {
+      "skinType": { "type": "String" }
+    }
+  },
+  "notSpecified": "ไม่ระบุ",
+
   "scanBarcode": "สแกนบาร์โค้ด",
   "verifyProduct": "ตรวจสอบผลิตภัณฑ์",
   "ingredients": "ส่วนผสม",
@@ -10,8 +22,245 @@
   "logout": "ออกจากระบบ",
   "save": "บันทึก",
   "cancel": "ยกเลิก",
+  "ok": "ตกลง",
+  "add": "เพิ่ม",
+  "tryAgain": "ลองอีกครั้ง",
+  "back": "กลับ",
   "searchHint": "ค้นหาผลิตภัณฑ์หรือส่วนผสม...",
   "safe": "ปลอดภัย",
   "caution": "ควรระวัง",
-  "danger": "พบสารที่แพ้"
+  "danger": "พบสารที่แพ้",
+  "errorGeneric": "เกิดข้อผิดพลาด: {error}",
+  "@errorGeneric": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "quickAnalysis": "วิเคราะห์ส่วนผสมด่วน",
+  "scanBarcodeHint": "สแกนบาร์โค้ดข้างกล่องเครื่องสำอางเพื่อเริ่มต้น",
+  "openCameraScanner": "เปิดกล้องสแกน",
+  "recentScanHistory": "ประวัติการสแกนล่าสุด",
+  "viewAll": "ดูทั้งหมด",
+  "noScanHistory": "ยังไม่มีประวัติการสแกน\nกดปุ่มสแกนด้านบนเพื่อเริ่มตรวจสอบส่วนผสมผลิตภัณฑ์",
+  "errorLoadingData": "เกิดข้อผิดพลาดในการโหลดข้อมูล: {error}",
+  "@errorLoadingData": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "enterBarcodeManually": "ป้อนบาร์โค้ดด้วยตัวเอง",
+  "enterBarcodeNumber": "ป้อนหมายเลขบาร์โค้ด",
+  "barcodeHintExample": "เช่น 8851234567890",
+  "cameraPermissionRequired": "ต้องการสิทธิ์เข้าถึงกล้อง",
+  "cameraPermissionDeniedPermanent": "คุณได้ปฏิเสธสิทธิ์กล้องแล้ว กรุณาเปิดสิทธิ์ในการตั้งค่าแอปเพื่อใช้งานสแกนบาร์โค้ด",
+  "cameraPermissionNeeded": "แอปต้องการเข้าถึงกล้องเพื่อสแกนบาร์โค้ดของผลิตภัณฑ์",
+  "openSettings": "เปิดการตั้งค่า",
+  "requestPermissionAgain": "ขอสิทธิ์อีกครั้ง",
+  "checkingCameraPermission": "กำลังตรวจสอบสิทธิ์กล้อง...",
+  "cameraError": "ไม่สามารถเปิดกล้องได้ หรืออุปกรณ์ไม่รองรับการสแกน",
+  "cameraFallbackHint": "คุณยังคงสามารถใช้ฟังก์ชันสแกนได้โดยการกรอกหมายเลขบาร์โค้ดด้วยตัวเอง",
+  "pointCameraAtBarcode": "จ่อกล้องตรงกับบาร์โค้ดผลิตภัณฑ์เพื่อเริ่มสแกน",
+  "searchingProduct": "กำลังค้นหาข้อมูลผลิตภัณฑ์...",
+  "analysisError": "เกิดข้อผิดพลาดในการวิเคราะห์",
+  "cannotScanNow": "ไม่สามารถดำเนินการสแกนได้ในขณะนี้",
+
+  "verifyProductInfo": "ตรวจสอบข้อมูลผลิตภัณฑ์",
+  "confirmBeforeAnalysis": "ยืนยันข้อมูลก่อนทำการวิเคราะห์",
+  "verifyIngredientsHint": "ตรวจสอบความถูกต้องของส่วนผสม เพื่อผลลัพธ์ที่แม่นยำที่สุด",
+  "productNameRequired": "ชื่อผลิตภัณฑ์ (จำเป็น)",
+  "productNameHint": "เช่น UV Water Serum",
+  "brandOptional": "แบรนด์ (ไม่จำเป็น)",
+  "brandHint": "เช่น MizuMi",
+  "ingredientListCount": "รายชื่อส่วนผสม ({count})",
+  "@ingredientListCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "addIngredientHint": "พิมพ์ชื่อส่วนผสมเพื่อเพิ่ม เช่น Niacinamide",
+  "noIngredientsYet": "ยังไม่มีส่วนผสมในรายการ\nกรุณาเพิ่มส่วนผสมเพื่อการวิเคราะห์โดย AI",
+  "pleaseEnterProductName": "กรุณากรอกชื่อผลิตภัณฑ์",
+  "analyzeWithAI": "วิเคราะห์ความเหมาะสมด้วย AI",
+
+  "productNotFound": "ไม่พบข้อมูลผลิตภัณฑ์",
+  "barcodeNotFoundMessage": "ไม่พบรหัสบาร์โค้ด: {barcode} ในระบบ ท่านสามารถร่วมกรอกส่วนผสมเองเพื่อเริ่มวิเคราะห์ความเหมาะสม",
+  "@barcodeNotFoundMessage": {
+    "placeholders": {
+      "barcode": { "type": "String" }
+    }
+  },
+  "allIngredientsSeparated": "ส่วนผสมทั้งหมด (แยกด้วยเครื่องหมายจุลภาค ,)",
+  "ingredientsPlaceholder": "Water, Niacinamide, Glycerin, Phenoxyethanol...",
+  "pleaseEnterIngredients": "กรุณากรอกส่วนผสม",
+  "doneAndContinue": "เสร็จสิ้นและไปขั้นตอนถัดไป",
+
+  "loadingCopy1": "ดึงข้อมูลส่วนผสมของผลิตภัณฑ์...",
+  "loadingCopy2": "กำลังวิเคราะห์ส่วนผสมเทียบกับสภาพผิวของคุณ...",
+  "loadingCopy3": "ตรวจสอบประวัติภูมิแพ้ของคุณ...",
+  "loadingCopy4": "วิเคราะห์ความเหมาะสมเฉพาะโปรไฟล์ของคุณ...",
+  "aiAnalyzing": "AI กำลังทำการวิเคราะห์",
+  "referenceProfile": "ข้อมูลอ้างอิง: โปรไฟล์ผิว{skinType}",
+  "@referenceProfile": {
+    "placeholders": {
+      "skinType": { "type": "String" }
+    }
+  },
+
+  "analysisResults": "ผลลัพธ์การวิเคราะห์",
+  "noAnalysisResults": "ไม่พบข้อมูลผลลัพธ์การวิเคราะห์",
+  "suitableForSkin": "เหมาะสมกับผิวคุณ",
+  "useWithCaution": "ควรระมัดระวัง",
+  "avoidProduct": "หลีกเลี่ยงผลิตภัณฑ์นี้",
+  "flaggedChemicals": "สารเคมีที่ควรระวังเป็นพิเศษ",
+  "markAsAllergen": "ระบุว่าฉันแพ้สารตัวนี้",
+  "aiSummary": "สรุปผลลัพธ์โดย AI",
+  "analyzedByGemini": "วิเคราะห์โดย Gemini AI",
+  "detailedBreakdown": "การวิเคราะห์รายละเอียดสารแยกตามตัว",
+  "noIngredientData": "ไม่พบข้อมูลส่วนผสมในสารระบบ",
+  "highRiskIngredients": "สารที่มีความเสี่ยงสูง (Danger)",
+  "cautionIngredients": "สารที่ควรระวัง (Caution)",
+  "safeIngredients": "สารที่ปลอดภัย (Safe)",
+  "helpCommunity": "ช่วยชุมชน: ยืนยันส่งข้อมูล",
+  "thankYouCommunity": "ขอบคุณที่ร่วมยืนยันข้อมูลผลิตภัณฑ์สำหรับชุมชน!",
+  "addedAllergen": "เพิ่ม {name} ลงในประวัติการแพ้ของคุณแล้ว",
+  "@addedAllergen": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "functionProperty": "หน้าที่/คุณสมบัติ: {value}",
+  "@functionProperty": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "backToHome": "กลับหน้าหลัก",
+
+  "searchBrandsHint": "ค้นหาชื่อแบรนด์ ผลิตภัณฑ์ หรือสารเคมี...",
+  "tabProducts": "ผลิตภัณฑ์",
+  "tabIngredients": "สารเคมี",
+  "typeToSearchProducts": "พิมพ์ข้อความด้านบนเพื่อค้นหาผลิตภัณฑ์",
+  "noProductsFound": "ไม่พบผลิตภัณฑ์ที่ค้นหา",
+  "unknownBrand": "ไม่ระบุแบรนด์",
+  "typeIngredientToCheck": "พิมพ์ชื่อสารเคมีด้านบนเพื่อตรวจสอบประวัติการแพ้",
+
+  "language": "ภาษา (Language)",
+  "displayLanguage": "ภาษาแสดงผล",
+  "helpAndSupport": "ความช่วยเหลือ",
+  "aboutPureCheck": "เกี่ยวกับ PureCheck",
+  "signOut": "ออกจากระบบ (Sign Out)",
+  "signOutFailed": "ออกจากระบบล้มเหลว: {error}",
+  "@signOutFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "aboutDescription": "แอปวิเคราะห์ความปลอดภัยของส่วนผสมในสกินแคร์และเครื่องสำอาง เพื่อความปลอดภัยเฉพาะสภาพผิวของคุณด้วยพลัง AI",
+
+  "skinProfileAndAllergy": "โปรไฟล์ผิว & ประวัติการแพ้",
+  "skinType": "ประเภทผิว",
+  "skinConditions": "ภาวะโรคผิวหนัง/ข้อควรระวัง",
+  "skinConcerns": "ความกังวลผิว",
+  "yourAllergens": "สารที่แพ้ของคุณ",
+  "noAllergensRecorded": "ไม่มีสารที่ระบุประวัติการแพ้",
+  "addAllergen": "เพิ่มสารที่แพ้",
+  "allergenNameHint": "ชื่อสาร เช่น Fragrance, Alcohol",
+  "profileNotFound": "ไม่พบข้อมูลโปรไฟล์ผิว",
+  "skinTypePrefix": "ผิว",
+
+  "skinOily": "มัน",
+  "skinDry": "แห้ง",
+  "skinCombination": "ผสม",
+  "skinNormal": "ธรรมดา",
+  "skinSensitive": "แพ้ง่าย",
+
+  "conditionAcneProne": "เป็นสิวง่าย / ผิวมันเป็นสิว",
+  "conditionEczema": "โรคผื่นภูมิแพ้ผิวหนัง (Eczema)",
+  "conditionRosacea": "โรคผิวหนังอักเสบโรซาเชีย (Rosacea)",
+  "conditionPsoriasis": "โรคสะเก็ดเงิน (Psoriasis)",
+
+  "concernAcne": "สิว",
+  "concernDarkSpots": "ฝ้า/จุดด่างดำ",
+  "concernWrinkles": "ริ้วรอย",
+  "concernPores": "รูขุมขนกว้าง",
+  "concernDullness": "ผิวหมองคล้ำ",
+  "concernRedness": "ผิวแดงระคายเคืองง่าย",
+  "concernDehydrated": "ผิวขาดน้ำ",
+
+  "allScanHistory": "ประวัติการสแกนทั้งหมด",
+  "noScanHistoryYet": "คุณยังไม่มีประวัติการสแกนผลิตภัณฑ์",
+
+  "allIngredientsCount": "ส่วนผสมทั้งหมด ({count})",
+  "@allIngredientsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "noIngredientInfo": "ไม่มีข้อมูลส่วนผสมผลิตภัณฑ์นี้",
+  "analyzeForMySkin": "วิเคราะห์ความเหมาะสมเฉพาะผิวฉัน",
+  "analyzingAgainstProfile": "กำลังวิเคราะห์ส่วนผสมเทียบกับโปรไฟล์ของคุณ...",
+
+  "allergyHistoryYes": "มีประวัติแพ้ส่วนผสมนี้",
+  "allergyHistoryNo": "ปลอดภัยสำหรับคุณ (ไม่มีประวัติการแพ้)",
+  "aboutIngredient": "ข้อมูลเกี่ยวกับส่วนผสม",
+  "ingredientGenericInfo": "สารเคมีชนิดนี้มักใช้ในการเป็นสารทำละลาย สารทำความสะอาด หรือสารออกฤทธิ์ในเครื่องสำอาง ทั้งนี้ควรสังเกตการระคายเคืองผิวทุกครั้งที่เริ่มใช้ผลิตภัณฑ์ใหม่",
+
+  "login": "เข้าสู่ระบบ",
+  "register": "สมัครสมาชิก",
+  "email": "อีเมล",
+  "password": "รหัสผ่าน",
+  "confirmPassword": "ยืนยันรหัสผ่าน",
+  "forgotPassword": "ลืมรหัสผ่าน?",
+  "noAccount": "ยังไม่มีบัญชี?",
+  "alreadyHaveAccount": "มีบัญชีอยู่แล้ว?",
+  "registerHere": "สมัครที่นี่",
+  "loginHere": "เข้าสู่ระบบที่นี่",
+  "loginFailed": "เข้าสู่ระบบล้มเหลว: {error}",
+  "@loginFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "registerFailed": "สมัครสมาชิกล้มเหลว: {error}",
+  "@registerFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "passwordMismatch": "รหัสผ่านไม่ตรงกัน",
+
+  "introTitle": "PureCheck",
+  "introSubtitle": "วิเคราะห์ส่วนผสมเครื่องสำอางด้วย AI",
+  "introDescription": "ตรวจสอบความปลอดภัยเฉพาะสภาพผิวของคุณ",
+  "getStarted": "เริ่มต้นใช้งาน",
+
+  "onboardingNext": "ถัดไป",
+  "onboardingBack": "ย้อนกลับ",
+  "onboardingSkip": "ข้าม",
+  "onboardingDone": "เสร็จสิ้น",
+  "onboardingStepOf": "ขั้นตอน {current}/{total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "skinTypeQuestion": "ผิวของคุณเป็นประเภทไหน?",
+  "skinTypeHint": "เลือกประเภทผิวที่ตรงกับคุณมากที่สุด",
+
+  "skinConditionsQuestion": "คุณมีภาวะผิวหนังใดเป็นพิเศษ?",
+  "skinConditionsHint": "เลือกทั้งหมดที่ตรงกับคุณ (หรือข้ามได้)",
+
+  "skinConcernsQuestion": "คุณกังวลเรื่องผิวด้านไหน?",
+  "skinConcernsHint": "เลือกทั้งหมดที่คุณสนใจ",
+
+  "allergensQuestion": "คุณมีประวัติแพ้สารเคมีในเครื่องสำอางหรือไม่?",
+  "allergensHint": "เพิ่มสารที่คุณเคยแพ้ หรือข้ามขั้นตอนนี้ได้",
+
+  "onboardingCompleteTitle": "พร้อมใช้งานแล้ว!",
+  "onboardingCompleteMessage": "โปรไฟล์ของคุณถูกบันทึกเรียบร้อยแล้ว สามารถเริ่มสแกนผลิตภัณฑ์ได้เลย",
+  "startUsing": "เริ่มใช้งาน PureCheck",
+
+  "pleaseEnterEmail": "กรุณากรอกอีเมล",
+  "pleaseEnterPassword": "กรุณากรอกรหัสผ่าน",
+  "pleaseConfirmPassword": "กรุณายืนยันรหัสผ่าน"
 }
