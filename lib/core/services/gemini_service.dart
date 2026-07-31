@@ -18,7 +18,7 @@ class GeminiService {
         : AppConfig.geminiApiKey;
 
     return GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-3.5-flash',
       apiKey: activeKey,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',
