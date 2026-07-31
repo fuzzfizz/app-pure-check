@@ -1,5 +1,31 @@
 enum ProductSource { local, openBeautyFacts, userEntered }
 
+extension ProductSourceX on ProductSource {
+  String get dbValue {
+    switch (this) {
+      case ProductSource.local:
+        return 'local';
+      case ProductSource.openBeautyFacts:
+        return 'open_beauty_facts';
+      case ProductSource.userEntered:
+        return 'user_entered';
+    }
+  }
+
+  static ProductSource fromDbValue(String value) {
+    switch (value) {
+      case 'local':
+        return ProductSource.local;
+      case 'open_beauty_facts':
+        return ProductSource.openBeautyFacts;
+      case 'user_entered':
+        return ProductSource.userEntered;
+      default:
+        return ProductSource.local;
+    }
+  }
+}
+
 class Product {
   final String id;
   final String? barcode;
@@ -30,10 +56,7 @@ class Product {
         brand: json['brand'] as String?,
         ingredients: List<String>.from(json['ingredients'] ?? []),
         rawIngredientsText: json['raw_ingredients_text'] as String?,
-        source: ProductSource.values.firstWhere(
-          (e) => e.name == (json['source'] ?? 'local'),
-          orElse: () => ProductSource.local,
-        ),
+        source: ProductSourceX.fromDbValue(json['source'] ?? 'local'),
         verifiedCount: json['verified_count'] as int? ?? 0,
         imageUrl: json['image_url'] as String?,
       );
@@ -64,7 +87,7 @@ class Product {
         'brand': brand,
         'ingredients': ingredients,
         'raw_ingredients_text': rawIngredientsText,
-        'source': source.name,
+        'source': source.dbValue,
         'verified_count': verifiedCount,
         'image_url': imageUrl,
       };
