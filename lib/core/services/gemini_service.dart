@@ -78,4 +78,34 @@ Rules:
       );
     }
   }
+
+  /// Validates a custom API Key by running a lightweight test request.
+  /// Returns null if the key is valid and has active quota,
+  /// otherwise returns a user-friendly error message.
+  Future<String?> validateApiKey(String apiKey) async {
+    try {
+      final model = GenerativeModel(
+        model: 'gemini-3.5-flash',
+        apiKey: apiKey.trim(),
+      );
+      final response = await model.generateContent([Content.text('Say OK')]);
+      if (response.text != null) {
+        return null; // Success!
+      } else {
+        return 'No response from model';
+      }
+    } on GenerativeAIException catch (e) {
+      final msg = e.message;
+      if (msg.contains('API_KEY_INVALID') || msg.contains('400')) {
+        return 'API Key ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (Invalid API Key)';
+      } else if (msg.contains('RESOURCE_EXHAUSTED') || msg.contains('429')) {
+        return 'โควตาเต็ม หรือสิทธิ์บัญชีฟรีเป็น 0 (Quota Exceeded / Limit 0)';
+      } else if (msg.contains('NOT_FOUND') || msg.contains('404')) {
+        return 'ไม่พบโมเดลนี้ในคีย์ของคุณ (Model Not Found)';
+      }
+      return msg;
+    } catch (e) {
+      return e.toString();
+    }
+  }
 }
