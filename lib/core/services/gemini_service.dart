@@ -11,8 +11,9 @@ class GeminiService {
 
   Future<GenerativeModel> _getModel() async {
     final prefs = await SharedPreferences.getInstance();
+    final useCustomKey = prefs.getBool('use_custom_gemini_api_key') ?? false;
     final customKey = prefs.getString('custom_gemini_api_key');
-    final activeKey = (customKey != null && customKey.trim().isNotEmpty)
+    final activeKey = (useCustomKey && customKey != null && customKey.trim().isNotEmpty)
         ? customKey.trim()
         : AppConfig.geminiApiKey;
 
