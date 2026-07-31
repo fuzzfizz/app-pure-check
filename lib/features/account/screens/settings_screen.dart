@@ -34,6 +34,7 @@ class SettingsScreen extends ConsumerWidget {
     bool isValidating = false;
     String? validationMessage;
     bool? isSuccess;
+    List<String>? availableModels;
 
     showDialog(
       context: context,
@@ -42,72 +43,104 @@ class SettingsScreen extends ConsumerWidget {
           builder: (context, setState) {
             return AlertDialog(
               title: Text(isTh ? 'ตั้งค่า Gemini API Key' : 'Gemini API Key Settings'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isTh
-                        ? 'ใส่ API Key ส่วนตัวของคุณเพื่อใช้ในการวิเคราะห์ด้วย AI (สร้างฟรีได้ที่ Google AI Studio)'
-                        : 'Enter your custom API Key for AI analysis (Get it free at Google AI Studio).',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      labelText: 'Gemini API Key',
-                      hintText: 'AIzaSy... หรือ AQ...',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.clear_rounded),
-                        onPressed: () => controller.clear(),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isTh
+                          ? 'ใส่ API Key ส่วนตัวของคุณเพื่อใช้ในการวิเคราะห์ด้วย AI (สร้างฟรีได้ที่ Google AI Studio)'
+                          : 'Enter your custom API Key for AI analysis (Get it free at Google AI Studio).',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: 'Gemini API Key',
+                        hintText: 'AIzaSy... หรือ AQ...',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.clear_rounded),
+                          onPressed: () => controller.clear(),
+                        ),
                       ),
                     ),
-                  ),
-                  if (isValidating) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isTh ? 'กำลังทดสอบคีย์...' : 'Testing key...',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ] else if (validationMessage != null) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          isSuccess == true
-                              ? Icons.check_circle_outline_rounded
-                              : Icons.error_outline_rounded,
-                          color: isSuccess == true ? AppColors.safe : AppColors.danger,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            validationMessage!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isSuccess == true ? AppColors.safe : AppColors.danger,
-                              fontWeight: FontWeight.w500,
+                    if (isValidating) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            isTh ? 'กำลังทดสอบคีย์...' : 'Testing key...',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ] else if (validationMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            isSuccess == true
+                                ? Icons.check_circle_outline_rounded
+                                : Icons.error_outline_rounded,
+                            color: isSuccess == true ? AppColors.safe : AppColors.danger,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              validationMessage!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isSuccess == true ? AppColors.safe : AppColors.danger,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
+                        ],
+                      ),
+                    ],
+                    if (availableModels != null && availableModels!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        isTh ? 'โมเดลที่สามารถใช้งานได้ (Available Models):' : 'Available Models:',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        constraints: const BoxConstraints(maxHeight: 120),
+                        width: double.maxFinite,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.2)),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                      ],
-                    ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.all(8),
+                          itemCount: availableModels!.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: Text(
+                                '• ${availableModels![index]}',
+                                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -125,6 +158,7 @@ class SettingsScreen extends ConsumerWidget {
                                   ? 'กรุณากรอก API Key ก่อนทดสอบ'
                                   : 'Please enter an API Key to test';
                               isSuccess = false;
+                              availableModels = null;
                             });
                             return;
                           }
@@ -133,12 +167,15 @@ class SettingsScreen extends ConsumerWidget {
                             isValidating = true;
                             validationMessage = null;
                             isSuccess = null;
+                            availableModels = null;
                           });
 
                           final error = await geminiService.validateApiKey(key);
+                          final models = await geminiService.getAvailableModels(key);
 
                           setState(() {
                             isValidating = false;
+                            availableModels = models;
                             if (error == null) {
                               validationMessage = isTh
                                   ? 'คีย์ใช้งานได้ปกติ (โมเดล Gemini 3.5 Flash พร้อม)'
