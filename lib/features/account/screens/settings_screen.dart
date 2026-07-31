@@ -125,18 +125,39 @@ class SettingsScreen extends ConsumerWidget {
 
           // API Key section
           _buildSectionHeader(isTh ? 'ตั้งค่า API Key (เสริม)' : 'API Key Settings (Optional)'),
+          SwitchListTile(
+            title: Text(isTh ? 'ใช้ Gemini API Key ส่วนตัว' : 'Use Custom Gemini API Key'),
+            subtitle: Text(
+              isTh
+                  ? 'ปิดเพื่อใช้คีย์ของระบบเป็นค่าเริ่มต้น'
+                  : 'Toggle to use your own API Key instead of the default',
+            ),
+            value: ref.watch(useCustomGeminiKeyProvider),
+            activeThumbColor: AppColors.primary,
+            onChanged: (val) async {
+              await ref.read(useCustomGeminiKeyProvider.notifier).setUseCustomKey(val);
+              if (val && (apiKey == null || apiKey.trim().isEmpty)) {
+                if (context.mounted) {
+                  _showApiKeyDialog(context, ref, apiKey);
+                }
+              }
+            },
+          ),
           ListTile(
+            enabled: ref.watch(useCustomGeminiKeyProvider),
             leading: const Icon(Icons.vpn_key_rounded, color: AppColors.primary),
-            title: Text(isTh ? 'Gemini API Key ส่วนตัว' : 'Custom Gemini API Key'),
+            title: Text(isTh ? 'กรอก Gemini API Key' : 'Enter Gemini API Key'),
             subtitle: Text(
               apiKey != null && apiKey.isNotEmpty
                   ? (isTh
                       ? 'คีย์ส่วนตัว: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}'
                       : 'Custom Key: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}')
-                  : (isTh ? 'ใช้คีย์ของระบบ (ค่าเริ่มต้น)' : 'Using system default key'),
+                  : (isTh ? 'ยังไม่ได้ตั้งค่าคีย์' : 'No key set'),
             ),
             trailing: const Icon(Icons.edit_rounded, size: 20),
-            onTap: () => _showApiKeyDialog(context, ref, apiKey),
+            onTap: ref.watch(useCustomGeminiKeyProvider)
+                ? () => _showApiKeyDialog(context, ref, apiKey)
+                : null,
           ),
           const Divider(),
 
