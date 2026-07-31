@@ -23,6 +23,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
   MobileScannerController? _controller;
   _CameraPermissionStatus _permissionStatus = _CameraPermissionStatus.checking;
   bool _isReturningFromSettings = false;
+  bool _isTorchOn = false;
+
 
   @override
   void initState() {
@@ -45,16 +47,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       if (_isReturningFromSettings) {
         _isReturningFromSettings = false;
         _checkAndRequestPermission();
+      } else if (_permissionStatus == _CameraPermissionStatus.granted) {
+        _controller?.start();
       }
-      // Do NOT call _controller?.start() here — autoStart: true handles it.
-      // Calling start() when already started triggers an internal error
-      // that causes errorBuilder to fire with "Cannot open camera".
     } else if (state == AppLifecycleState.paused) {
-      // Only stop on paused (NOT inactive — inactive fires during
-      // permission dialogs and would kill the camera prematurely)
       _controller?.stop();
     }
   }
+
 
   Future<void> _checkAndRequestPermission() async {
     if (!mounted) return;
@@ -382,16 +382,34 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: () => _showManualBarcodeDialog(context, l10n),
-                            icon: const Icon(Icons.keyboard_rounded),
-                            label: Text(l10n.enterBarcodeManually),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () => _controller?.switchCamera(),
+                                icon: const Icon(Icons.cameraswitch_rounded),
+                                label: const Text('สลับกล้อง / Switch Camera'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: () => _showManualBarcodeDialog(context, l10n),
+                                icon: const Icon(Icons.keyboard_rounded),
+                                label: Text(l10n.enterBarcodeManually),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.white54),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -420,6 +438,39 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 ),
               ),
             ),
+            // Top Controls (Torch & Camera Switch)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      _isTorchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                      color: _isTorchOn ? Colors.amber : Colors.white,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black54,
+                    ),
+                    onPressed: () {
+                      _controller?.toggleTorch();
+                      setState(() {
+                        _isTorchOn = !_isTorchOn;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.cameraswitch_rounded, color: Colors.white),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black54,
+                    ),
+                    onPressed: () => _controller?.switchCamera(),
+                  ),
+                ],
+              ),
+            ),
             Positioned(
               bottom: 64,
               left: 24,
@@ -442,6 +493,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             ),
           ],
         );
+
     }
   }
 }
