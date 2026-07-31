@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
@@ -106,6 +107,36 @@ Rules:
       return msg;
     } catch (e) {
       return e.toString();
+    }
+  }
+
+  /// Fetches the list of all available Gemini model display names for a given API Key.
+  /// Returns a list of strings if successful, otherwise returns null.
+  Future<List<String>?> getAvailableModels(String apiKey) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.trim()}'),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final modelsList = data['models'] as List<dynamic>?;
+        if (modelsList != null) {
+          final List<String> names = [];
+          for (var m in modelsList) {
+            final name = m['name'] as String? ?? '';
+            final displayName = m['displayName'] as String? ?? '';
+            final supportedMethods = m['supportedGenerationMethods'] as List<dynamic>? ?? [];
+            if (name.isNotEmpty && supportedMethods.contains('generateContent')) {
+              final cleanName = name.replaceFirst('models/', '');
+              names.add(displayName.isNotEmpty ? '$displayName ($cleanName)' : cleanName);
+            }
+          }
+          return names;
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 }
