@@ -381,6 +381,24 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                             style: const TextStyle(color: Colors.white70, fontSize: 14),
                             textAlign: TextAlign.center,
                           ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.black38,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.redAccent.withAlpha(100)),
+                            ),
+                            child: SelectableText(
+                              'Code: ${error.errorCode.name}\nMessage: ${error.errorDetails?.message ?? "N/A"}',
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                           const SizedBox(height: 24),
                           Wrap(
                             alignment: WrapAlignment.center,
