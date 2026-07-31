@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/gemini_api_key_provider.dart';
+import '../../../core/services/gemini_service.dart';
 import '../../../core/theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -28,62 +29,153 @@ class SettingsScreen extends ConsumerWidget {
   void _showApiKeyDialog(BuildContext context, WidgetRef ref, String? currentKey) {
     final controller = TextEditingController(text: currentKey ?? '');
     final isTh = ref.read(localeProvider).languageCode == 'th';
+    final geminiService = GeminiService();
+
+    bool isValidating = false;
+    String? validationMessage;
+    bool? isSuccess;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(isTh ? 'ตั้งค่า Gemini API Key' : 'Gemini API Key Settings'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isTh
-                    ? 'ใส่ API Key ส่วนตัวของคุณเพื่อใช้ในการวิเคราะห์ด้วย AI (สร้างฟรีได้ที่ Google AI Studio)'
-                    : 'Enter your custom API Key for AI analysis (Get it free at Google AI Studio).',
-                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  labelText: 'Gemini API Key',
-                  hintText: 'AIzaSy... หรือ AQ...',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear_rounded),
-                    onPressed: () => controller.clear(),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(isTh ? 'ตั้งค่า Gemini API Key' : 'Gemini API Key Settings'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isTh
+                        ? 'ใส่ API Key ส่วนตัวของคุณเพื่อใช้ในการวิเคราะห์ด้วย AI (สร้างฟรีได้ที่ Google AI Studio)'
+                        : 'Enter your custom API Key for AI analysis (Get it free at Google AI Studio).',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(isTh ? 'ยกเลิก' : 'Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final newKey = controller.text.trim();
-                await ref.read(geminiApiKeyProvider.notifier).setKey(newKey.isEmpty ? null : newKey);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        isTh
-                            ? (newKey.isEmpty ? 'รีเซ็ตเป็นคีย์ระบบเรียบร้อย' : 'บันทึก API Key สำเร็จ')
-                            : (newKey.isEmpty ? 'Reset to system key' : 'API Key saved successfully'),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      labelText: 'Gemini API Key',
+                      hintText: 'AIzaSy... หรือ AQ...',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.clear_rounded),
+                        onPressed: () => controller.clear(),
                       ),
                     ),
-                  );
-                }
-              },
-              child: Text(isTh ? 'บันทึก' : 'Save'),
-            ),
-          ],
+                  ),
+                  if (isValidating) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isTh ? 'กำลังทดสอบคีย์...' : 'Testing key...',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ] else if (validationMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          isSuccess == true
+                              ? Icons.check_circle_outline_rounded
+                              : Icons.error_outline_rounded,
+                          color: isSuccess == true ? AppColors.safe : AppColors.danger,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            validationMessage!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSuccess == true ? AppColors.safe : AppColors.danger,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(isTh ? 'ยกเลิก' : 'Cancel'),
+                ),
+                TextButton(
+                  onPressed: isValidating
+                      ? null
+                      : () async {
+                          final key = controller.text.trim();
+                          if (key.isEmpty) {
+                            setState(() {
+                              validationMessage = isTh
+                                  ? 'กรุณากรอก API Key ก่อนทดสอบ'
+                                  : 'Please enter an API Key to test';
+                              isSuccess = false;
+                            });
+                            return;
+                          }
+
+                          setState(() {
+                            isValidating = true;
+                            validationMessage = null;
+                            isSuccess = null;
+                          });
+
+                          final error = await geminiService.validateApiKey(key);
+
+                          setState(() {
+                            isValidating = false;
+                            if (error == null) {
+                              validationMessage = isTh
+                                  ? 'คีย์ใช้งานได้ปกติ (โมเดล Gemini 3.5 Flash พร้อม)'
+                                  : 'Key is valid (Gemini 3.5 Flash ready)';
+                              isSuccess = true;
+                            } else {
+                              validationMessage = error;
+                              isSuccess = false;
+                            }
+                          });
+                        },
+                  child: Text(isTh ? 'ทดสอบคีย์' : 'Test Key'),
+                ),
+                ElevatedButton(
+                  onPressed: isValidating
+                      ? null
+                      : () async {
+                          final newKey = controller.text.trim();
+                          await ref.read(geminiApiKeyProvider.notifier).setKey(newKey.isEmpty ? null : newKey);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  isTh
+                                      ? (newKey.isEmpty ? 'รีเซ็ตเป็นคีย์ระบบเรียบร้อย' : 'บันทึก API Key สำเร็จ')
+                                      : (newKey.isEmpty ? 'Reset to system key' : 'API Key saved successfully'),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                  child: Text(isTh ? 'บันทึก' : 'Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
