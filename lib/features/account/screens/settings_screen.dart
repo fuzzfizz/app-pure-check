@@ -150,8 +150,8 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(
               apiKey != null && apiKey.isNotEmpty
                   ? (isTh
-                      ? 'คีย์ส่วนตัว: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}'
-                      : 'Custom Key: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}')
+                      ? 'คีย์ส่วนตัว: ${apiKey.length >= 8 ? "${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}" : apiKey}'
+                      : 'Custom Key: ${apiKey.length >= 8 ? "${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}" : apiKey}')
                   : (isTh ? 'ยังไม่ได้ตั้งค่าคีย์' : 'No key set'),
             ),
             trailing: const Icon(Icons.edit_rounded, size: 20),
