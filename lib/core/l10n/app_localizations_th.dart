@@ -572,4 +572,8 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get pleaseConfirmPassword => 'กรุณายืนยันรหัสผ่าน';
+
+  @override
+  String get healthDisclaimer =>
+      'ข้อความปฏิเสธความรับผิดชอบ: ผลการวิเคราะห์จาก AI เป็นเพียงข้อมูลประกอบการตัดสินใจเบื้องต้น ไม่สามารถทดแทนคำแนะนำทางการแพทย์หรือแพทย์ผิวหนังได้';
 }

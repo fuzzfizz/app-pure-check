@@ -575,4 +575,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pleaseConfirmPassword => 'Please confirm your password';
+
+  @override
+  String get healthDisclaimer =>
+      'Health Disclaimer: AI analysis is for informational purposes only and does not replace medical or dermatological advice.';
 }

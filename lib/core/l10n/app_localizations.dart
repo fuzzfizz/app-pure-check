@@ -1141,6 +1141,12 @@ abstract class AppLocalizations {
   /// In th, this message translates to:
   /// **'กรุณายืนยันรหัสผ่าน'**
   String get pleaseConfirmPassword;
+
+  /// No description provided for @healthDisclaimer.
+  ///
+  /// In th, this message translates to:
+  /// **'ข้อความปฏิเสธความรับผิดชอบ: ผลการวิเคราะห์จาก AI เป็นเพียงข้อมูลประกอบการตัดสินใจเบื้องต้น ไม่สามารถทดแทนคำแนะนำทางการแพทย์หรือแพทย์ผิวหนังได้'**
+  String get healthDisclaimer;
 }
 
 class _AppLocalizationsDelegate
