@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -17,39 +18,47 @@ import '../../features/account/screens/history_screen.dart';
 import '../../features/account/screens/settings_screen.dart';
 import '../../features/admin/screens/admin_review_screen.dart';
 
+Future<String?> appRedirect(dynamic ref, BuildContext context, GoRouterState state) async {
+  final user = ref.read(currentUserProvider);
+  final publicRoutes = ['/splash', '/intro', '/login', '/register'];
+  final isPublic = publicRoutes.any((r) => state.matchedLocation.startsWith(r));
+
+  if (user == null && !isPublic) return '/login';
+
+  if (user != null) {
+    // Skip check on splash screen (handled by splash timer)
+    if (state.matchedLocation == '/splash') return null;
+
+    final profileAsync = ref.read(currentProfileProvider);
+    UserProfile? profile;
+    if (profileAsync.hasValue && !profileAsync.isLoading) {
+      profile = profileAsync.value;
+    } else {
+      profile = await ref.read(currentProfileProvider.future);
+    }
+
+    final isAdminRoute = state.matchedLocation.startsWith('/admin');
+
+    if (isAdminRoute && (profile == null || !profile.isAdmin)) {
+      return '/home';
+    }
+
+    final isOnboarding = state.matchedLocation.startsWith('/onboarding');
+
+    if (profile == null || !profile.onboardingComplete) {
+      if (!isOnboarding) return '/onboarding';
+    } else {
+      if (isOnboarding || isPublic) return '/home';
+    }
+  }
+
+  return null;
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
-    redirect: (context, state) async {
-      final user = Supabase.instance.client.auth.currentUser;
-      final publicRoutes = ['/splash', '/intro', '/login', '/register'];
-      final isPublic = publicRoutes.any((r) => state.matchedLocation.startsWith(r));
-
-      if (user == null && !isPublic) return '/login';
-
-      if (user != null) {
-        // Skip check on splash screen (handled by splash timer)
-        if (state.matchedLocation == '/splash') return null;
-
-        final profileAsync = ref.read(currentProfileProvider);
-        UserProfile? profile;
-        if (profileAsync.hasValue && !profileAsync.isLoading) {
-          profile = profileAsync.value;
-        } else {
-          profile = await ref.read(currentProfileProvider.future);
-        }
-
-        final isOnboarding = state.matchedLocation.startsWith('/onboarding');
-
-        if (profile == null || !profile.onboardingComplete) {
-          if (!isOnboarding) return '/onboarding';
-        } else {
-          if (isOnboarding || isPublic) return '/home';
-        }
-      }
-
-      return null;
-    },
+    redirect: (context, state) => appRedirect(ref, context, state),
     routes: [
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/intro', builder: (_, __) => const IntroScreen()),
