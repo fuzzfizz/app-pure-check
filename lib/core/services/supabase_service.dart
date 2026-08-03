@@ -5,7 +5,21 @@ import '../models/product.dart';
 import '../models/analysis_result.dart';
 
 class SupabaseService {
-  final SupabaseClient _client = Supabase.instance.client;
+  final SupabaseClient _client;
+
+  SupabaseService([SupabaseClient? client])
+      : _client = client ?? _defaultClient();
+
+  static SupabaseClient _defaultClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return SupabaseClient('https://dummy.supabase.co', 'dummy_anon_key');
+    }
+  }
+
+  SupabaseClient get client => _client;
+
 
   // Profile
   Future<UserProfile?> getProfile(String userId) async {
