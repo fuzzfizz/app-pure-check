@@ -576,4 +576,17 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get healthDisclaimer =>
       'ข้อความปฏิเสธความรับผิดชอบ: ผลการวิเคราะห์จาก AI เป็นเพียงข้อมูลประกอบการตัดสินใจเบื้องต้น ไม่สามารถทดแทนคำแนะนำทางการแพทย์หรือแพทย์ผิวหนังได้';
+
+  @override
+  String get didYouMeanTitle => 'คุณหมายถึงส่วนผสมเหล่านี้ใช่หรือไม่?';
+
+  @override
+  String get didYouMeanSubtitle =>
+      'เราพบชื่อส่วนผสมที่อาจสะกดผิด คุณต้องการใช้ชื่อมาตรฐาน INCI ที่แนะนำหรือไม่?';
+
+  @override
+  String get acceptSuggestions => 'ใช้ชื่อที่แนะนำ';
+
+  @override
+  String get keepOriginal => 'คงชื่อเดิมไว้';
 }

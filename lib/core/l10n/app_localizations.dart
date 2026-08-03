@@ -1147,6 +1147,30 @@ abstract class AppLocalizations {
   /// In th, this message translates to:
   /// **'ข้อความปฏิเสธความรับผิดชอบ: ผลการวิเคราะห์จาก AI เป็นเพียงข้อมูลประกอบการตัดสินใจเบื้องต้น ไม่สามารถทดแทนคำแนะนำทางการแพทย์หรือแพทย์ผิวหนังได้'**
   String get healthDisclaimer;
+
+  /// No description provided for @didYouMeanTitle.
+  ///
+  /// In th, this message translates to:
+  /// **'คุณหมายถึงส่วนผสมเหล่านี้ใช่หรือไม่?'**
+  String get didYouMeanTitle;
+
+  /// No description provided for @didYouMeanSubtitle.
+  ///
+  /// In th, this message translates to:
+  /// **'เราพบชื่อส่วนผสมที่อาจสะกดผิด คุณต้องการใช้ชื่อมาตรฐาน INCI ที่แนะนำหรือไม่?'**
+  String get didYouMeanSubtitle;
+
+  /// No description provided for @acceptSuggestions.
+  ///
+  /// In th, this message translates to:
+  /// **'ใช้ชื่อที่แนะนำ'**
+  String get acceptSuggestions;
+
+  /// No description provided for @keepOriginal.
+  ///
+  /// In th, this message translates to:
+  /// **'คงชื่อเดิมไว้'**
+  String get keepOriginal;
 }
 
 class _AppLocalizationsDelegate
