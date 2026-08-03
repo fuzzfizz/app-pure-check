@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_check/core/l10n/app_localizations.dart';
 import 'package:pure_check/core/models/product.dart';
-import 'package:pure_check/core/services/admin_moderation_service.dart';
 import 'package:pure_check/core/services/inci_search_service.dart';
 import 'package:pure_check/core/services/supabase_service.dart';
 import 'package:pure_check/features/auth/providers/auth_provider.dart';
