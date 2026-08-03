@@ -268,5 +268,12 @@
   "didYouMeanTitle": "คุณหมายถึงส่วนผสมเหล่านี้ใช่หรือไม่?",
   "didYouMeanSubtitle": "เราพบชื่อส่วนผสมที่อาจสะกดผิด คุณต้องการใช้ชื่อมาตรฐาน INCI ที่แนะนำหรือไม่?",
   "acceptSuggestions": "ใช้ชื่อที่แนะนำ",
-  "keepOriginal": "คงชื่อเดิมไว้"
+  "keepOriginal": "คงชื่อเดิมไว้",
+  "adminReviewTitle": "การอนุมัติผลิตภัณฑ์สำหรับแอดมิน",
+  "pendingQueue": "รายการรอตรวจสอบ",
+  "autoApproveSafe": "อนุมัติอัตโนมัติรายการที่ปลอดภัย",
+  "approve": "อนุมัติ",
+  "reject": "ปฏิเสธ",
+  "confidenceScore": "คะแนนความเชื่อมั่น",
+  "noPendingProducts": "ไม่มีรายการผลิตภัณฑ์ที่รอตรวจสอบ"
 }

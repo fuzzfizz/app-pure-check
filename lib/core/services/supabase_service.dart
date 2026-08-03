@@ -70,6 +70,25 @@ class SupabaseService {
     return (res as List).map((e) => Product.fromJson(e)).toList();
   }
 
+  Future<List<Product>> getPendingProducts() async {
+    final res = await _client
+        .from('products')
+        .select()
+        .eq('status', 'pending');
+    return (res as List).map((e) => Product.fromJson(e)).toList();
+  }
+
+  Future<void> updateProductStatus(
+    String productId,
+    String status,
+    bool isVerified,
+  ) async {
+    await _client.from('products').update({
+      'status': status,
+      'is_verified': isVerified,
+    }).eq('id', productId);
+  }
+
   // Scan history
   Future<void> addScanHistory({
     required String userId,

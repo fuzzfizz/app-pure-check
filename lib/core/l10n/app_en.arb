@@ -268,5 +268,12 @@
   "didYouMeanTitle": "Did you mean?",
   "didYouMeanSubtitle": "We found potential typos in some ingredient names. Would you like to use the recommended INCI names?",
   "acceptSuggestions": "Use Recommended Names",
-  "keepOriginal": "Keep Original"
+  "keepOriginal": "Keep Original",
+  "adminReviewTitle": "Admin Product Moderation",
+  "pendingQueue": "Pending Queue",
+  "autoApproveSafe": "Auto-Approve Safe",
+  "approve": "Approve",
+  "reject": "Reject",
+  "confidenceScore": "Confidence Score",
+  "noPendingProducts": "No pending products to review"
 }
