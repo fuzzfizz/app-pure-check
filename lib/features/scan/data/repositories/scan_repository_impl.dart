@@ -23,30 +23,28 @@ final scanRepositoryProvider = Provider<ScanRepository>((ref) {
 });
 
 class ScanRepositoryImpl implements ScanRepository {
-  final SupabaseService _supabaseService;
-  final BeautyFactsService _beautyFactsService;
-  final GeminiService _geminiService;
+  final SupabaseService supabaseService;
+  final BeautyFactsService beautyFactsService;
+  final GeminiService geminiService;
 
   ScanRepositoryImpl({
-    required SupabaseService supabaseService,
-    required BeautyFactsService beautyFactsService,
-    required GeminiService geminiService,
-  })  : _supabaseService = supabaseService,
-        _beautyFactsService = beautyFactsService,
-        _geminiService = geminiService;
+    required this.supabaseService,
+    required this.beautyFactsService,
+    required this.geminiService,
+  });
 
   @override
   Future<Product?> fetchProductByBarcode(String barcode) async {
-    final dbProduct = await _supabaseService.getProductByBarcode(barcode);
+    final dbProduct = await supabaseService.getProductByBarcode(barcode);
     if (dbProduct != null) {
       return dbProduct;
     }
-    return await _beautyFactsService.fetchByBarcode(barcode);
+    return await beautyFactsService.fetchByBarcode(barcode);
   }
 
   @override
   Future<Product> upsertProduct(Product product) async {
-    return await _supabaseService.upsertProduct(product);
+    return await supabaseService.upsertProduct(product);
   }
 
   @override
@@ -56,7 +54,7 @@ class ScanRepositoryImpl implements ScanRepository {
     required List<String> ingredients,
   }) async {
     try {
-      final response = await _supabaseService.client.functions.invoke(
+      final response = await supabaseService.client.functions.invoke(
         'analyze-ingredients',
         body: {
           'profile': profile.toJson(),
@@ -75,7 +73,7 @@ class ScanRepositoryImpl implements ScanRepository {
       // Catch network or function invocation errors and fall back to Gemini client
     }
 
-    return await _geminiService.analyzeIngredients(
+    return await geminiService.analyzeIngredients(
       profile: profile,
       allergens: allergens,
       ingredients: ingredients,
@@ -88,7 +86,7 @@ class ScanRepositoryImpl implements ScanRepository {
     required String productId,
     required AnalysisResult result,
   }) async {
-    await _supabaseService.addScanHistory(
+    await supabaseService.addScanHistory(
       userId: userId,
       productId: productId,
       result: result,

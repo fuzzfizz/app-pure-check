@@ -3,7 +3,6 @@ import '../../../core/models/product.dart';
 import '../../../core/models/analysis_result.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/repositories/scan_repository_impl.dart';
-import '../domain/repositories/scan_repository.dart';
 
 enum ScanStep { idle, scanning, fetching, verifying, manualEntry, analyzing, error }
 
