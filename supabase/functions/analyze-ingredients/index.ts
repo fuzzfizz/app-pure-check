@@ -6,6 +6,64 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const SAFE_FATTY_ALCOHOLS = [
+  'cetearyl alcohol',
+  'cetyl alcohol',
+  'stearyl alcohol',
+  'behenyl alcohol',
+  'myristyl alcohol',
+  'lanolin alcohol',
+  'arachidyl alcohol',
+  'isostearyl alcohol',
+  'oleyl alcohol',
+  'lauryl alcohol',
+  'panthenol',
+];
+
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isSmartMatch(target: string, ingredient: string, aliases: string[] = []): boolean {
+  const normTarget = target.trim().toLowerCase();
+  const normIng = ingredient.trim().toLowerCase();
+  const normAliases = aliases.map(a => String(a).trim().toLowerCase()).filter(Boolean);
+
+  if (!normTarget || !normIng) return false;
+
+  // 1. Exact string match against target or aliases
+  if (normIng === normTarget || normAliases.includes(normIng)) {
+    return true;
+  }
+
+  // 2. Exception Rule: Safe fatty alcohols should not be flagged by generic "alcohol" / "ethanol"
+  if (normTarget === 'alcohol' || normTarget === 'ethanol' || normTarget === 'denatured alcohol') {
+    const isSafeFatty = SAFE_FATTY_ALCOHOLS.some(safe => normIng.includes(safe));
+    if (isSafeFatty) {
+      return false;
+    }
+  }
+
+  // 3. Word boundary regex match (\btarget\b)
+  try {
+    const targetRegex = new RegExp(`\\b${escapeRegExp(normTarget)}\\b`, 'i');
+    if (targetRegex.test(normIng)) {
+      return true;
+    }
+
+    for (const alias of normAliases) {
+      const aliasRegex = new RegExp(`\\b${escapeRegExp(alias)}\\b`, 'i');
+      if (aliasRegex.test(normIng)) {
+        return true;
+      }
+    }
+  } catch (_) {
+    return normIng === normTarget;
+  }
+
+  return false;
+}
+
 serve(async (req: Request) => {
   // Handle OPTIONS CORS preflight headers
   if (req.method === 'OPTIONS') {
@@ -25,7 +83,7 @@ serve(async (req: Request) => {
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Query hazardous_chemicals table from Supabase DB
+    // 1. Query hazardous_chemicals table from Supabase DB with Smart Match & Word Boundaries
     const hazardousMatches: Array<{ name: string; reason: string; risk_level: string }> = [];
     if (supabaseUrl && supabaseServiceKey && Array.isArray(ingredients) && ingredients.length > 0) {
       try {
@@ -34,19 +92,19 @@ serve(async (req: Request) => {
           .select('*');
 
         if (!error && hazardousRows && Array.isArray(hazardousRows)) {
-          const normalizedIngredients = ingredients.map((ing: string) => String(ing).trim().toLowerCase());
-
           for (const row of hazardousRows) {
-            const chemName = String(row.name || row.chemical_name || row.inci_name || '').trim().toLowerCase();
+            const chemName = String(row.name || row.chemical_name || row.inci_name || '').trim();
             if (!chemName) continue;
 
-            const isMatch = normalizedIngredients.some((ing: string) =>
-              ing === chemName || ing.includes(chemName) || chemName.includes(ing)
+            const aliases: string[] = Array.isArray(row.aliases) ? row.aliases : [];
+
+            const matchedIng = ingredients.find((ing: string) =>
+              isSmartMatch(chemName, String(ing), aliases)
             );
 
-            if (isMatch) {
+            if (matchedIng) {
               hazardousMatches.push({
-                name: String(row.name || row.chemical_name || chemName),
+                name: String(matchedIng),
                 reason: String(row.reason || row.description || row.hazard_description || 'สารเคมีอันตรายตามฐานข้อมูล (Hazardous chemical in database)'),
                 risk_level: String(row.risk_level || row.severity || 'danger')
               });
@@ -58,17 +116,15 @@ serve(async (req: Request) => {
       }
     }
 
-    // 2. Check for User Allergens matching ingredients
+    // 2. Check for User Allergens matching ingredients with Smart Match & Word Boundaries
     const allergenMatches: Array<{ name: string; reason: string; risk_level: string }> = [];
     if (Array.isArray(allergens) && Array.isArray(ingredients)) {
       for (const allergen of allergens) {
         if (typeof allergen !== 'string' || !allergen.trim()) continue;
-        const normAllergen = allergen.trim().toLowerCase();
 
-        const matchedIng = ingredients.find((ing: string) => {
-          const normIng = String(ing).trim().toLowerCase();
-          return normIng === normAllergen || normIng.includes(normAllergen) || normAllergen.includes(normIng);
-        });
+        const matchedIng = ingredients.find((ing: string) =>
+          isSmartMatch(String(allergen), String(ing))
+        );
 
         if (matchedIng) {
           allergenMatches.push({
