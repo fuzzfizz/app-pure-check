@@ -37,6 +37,9 @@ class UserProfile {
   final List<String> skinConcerns;
   final List<String> avoidPreferences;
   final bool onboardingComplete;
+  final String role;
+
+  bool get isAdmin => role == 'admin';
 
   const UserProfile({
     required this.id,
@@ -45,12 +48,14 @@ class UserProfile {
     this.skinConcerns = const [],
     this.avoidPreferences = const [],
     this.onboardingComplete = false,
+    this.role = 'user',
   });
 
   factory UserProfile.empty(String id) => UserProfile(
         id: id,
         skinType: SkinType.normal,
         onboardingComplete: false,
+        role: 'user',
       );
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
@@ -60,6 +65,7 @@ class UserProfile {
         skinConcerns: List<String>.from(json['skin_concerns'] ?? []),
         avoidPreferences: List<String>.from(json['avoid_preferences'] ?? []),
         onboardingComplete: json['onboarding_complete'] as bool? ?? false,
+        role: json['role'] as String? ?? 'user',
       );
 
   Map<String, dynamic> toJson() => {
@@ -69,6 +75,7 @@ class UserProfile {
         'skin_concerns': skinConcerns,
         'avoid_preferences': avoidPreferences,
         'onboarding_complete': onboardingComplete,
+        'role': role,
       };
 
   UserProfile copyWith({
@@ -77,6 +84,7 @@ class UserProfile {
     List<String>? skinConcerns,
     List<String>? avoidPreferences,
     bool? onboardingComplete,
+    String? role,
   }) => UserProfile(
         id: id,
         skinType: skinType ?? this.skinType,
@@ -84,5 +92,6 @@ class UserProfile {
         skinConcerns: skinConcerns ?? this.skinConcerns,
         avoidPreferences: avoidPreferences ?? this.avoidPreferences,
         onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+        role: role ?? this.role,
       );
 }
