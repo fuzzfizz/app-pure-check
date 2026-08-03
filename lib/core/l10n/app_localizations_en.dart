@@ -578,7 +578,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get healthDisclaimer =>
-      'Health Disclaimer: AI analysis is for informational purposes only and does not replace medical or dermatological advice.';
+      'AI analysis is for informational purposes only and does not replace medical or dermatological advice.';
 
   @override
   String get didYouMeanTitle => 'Did you mean?';

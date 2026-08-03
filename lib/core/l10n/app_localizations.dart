@@ -1145,7 +1145,7 @@ abstract class AppLocalizations {
   /// No description provided for @healthDisclaimer.
   ///
   /// In th, this message translates to:
-  /// **'ข้อความปฏิเสธความรับผิดชอบ: ผลการวิเคราะห์จาก AI เป็นเพียงข้อมูลประกอบการตัดสินใจเบื้องต้น ไม่สามารถทดแทนคำแนะนำทางการแพทย์หรือแพทย์ผิวหนังได้'**
+  /// **'ผลการวิเคราะห์จาก AI เป็นเพียงข้อมูลประกอบการตัดสินใจเบื้องต้น ไม่สามารถทดแทนคำแนะนำทางการแพทย์หรือแพทย์ผิวหนังได้'**
   String get healthDisclaimer;
 
   /// No description provided for @didYouMeanTitle.

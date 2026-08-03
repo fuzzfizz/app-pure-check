@@ -263,7 +263,7 @@
   "pleaseEnterEmail": "Please enter an email",
   "pleaseEnterPassword": "Please enter a password",
   "pleaseConfirmPassword": "Please confirm your password",
-  "healthDisclaimer": "Health Disclaimer: AI analysis is for informational purposes only and does not replace medical or dermatological advice.",
+  "healthDisclaimer": "AI analysis is for informational purposes only and does not replace medical or dermatological advice.",
 
   "didYouMeanTitle": "Did you mean?",
   "didYouMeanSubtitle": "We found potential typos in some ingredient names. Would you like to use the recommended INCI names?",
