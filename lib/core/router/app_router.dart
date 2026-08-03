@@ -15,6 +15,7 @@ import '../../features/discovery/screens/search_screen.dart';
 import '../../features/account/screens/profile_screen.dart';
 import '../../features/account/screens/history_screen.dart';
 import '../../features/account/screens/settings_screen.dart';
+import '../../features/admin/screens/admin_review_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -65,6 +66,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(path: '/admin/review', builder: (_, __) => const AdminReviewScreen()),
     ],
   );
 });
