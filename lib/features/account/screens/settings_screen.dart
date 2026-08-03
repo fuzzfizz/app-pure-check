@@ -7,6 +7,7 @@ import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/gemini_api_key_provider.dart';
 import '../../../core/services/gemini_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -223,6 +224,9 @@ class SettingsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final apiKey = ref.watch(geminiApiKeyProvider);
     final isTh = ref.watch(localeProvider).languageCode == 'th';
+    final profileAsync = ref.watch(currentProfileProvider);
+    final profile = profileAsync.asData?.value;
+    final isAdmin = profile?.isAdmin ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -309,6 +313,22 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           const Divider(),
+
+          if (isAdmin) ...[
+            _buildSectionHeader(isTh ? 'การจัดการระบบ (Admin Tools)' : 'Admin Tools'),
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings_outlined, color: AppColors.primary),
+              title: const Text('Admin Product Review'),
+              subtitle: Text(
+                isTh
+                    ? 'ตรวจสอบและอนุมัติสินค้าที่ผู้ใช้ส่งเข้ามา'
+                    : 'Review & approve user-submitted products',
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () => context.push('/admin/review'),
+            ),
+            const Divider(),
+          ],
 
           // Logout Action
           const SizedBox(height: 32),
