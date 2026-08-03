@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/splash_screen.dart';
@@ -18,7 +19,11 @@ import '../../features/account/screens/settings_screen.dart';
 import '../../features/admin/screens/admin_review_screen.dart';
 
 Future<String?> appRedirect(dynamic ref, BuildContext context, GoRouterState state) async {
-  final user = ref.read(currentUserProvider);
+  User? user;
+  try {
+    user = Supabase.instance.client.auth.currentUser;
+  } catch (_) {}
+  user ??= ref.read(currentUserProvider);
   final publicRoutes = ['/splash', '/intro', '/login', '/register'];
   final isPublic = publicRoutes.any((r) => state.matchedLocation.startsWith(r));
 
@@ -28,12 +33,16 @@ Future<String?> appRedirect(dynamic ref, BuildContext context, GoRouterState sta
     // Skip check on splash screen (handled by splash timer)
     if (state.matchedLocation == '/splash') return null;
 
-    final profileAsync = ref.read(currentProfileProvider);
     UserProfile? profile;
-    if (profileAsync.hasValue && !profileAsync.isLoading) {
-      profile = profileAsync.value;
-    } else {
-      profile = await ref.read(currentProfileProvider.future);
+    try {
+      final profileAsync = ref.read(currentProfileProvider);
+      if (profileAsync.hasValue && !profileAsync.isLoading) {
+        profile = profileAsync.value;
+      } else {
+        profile = await ref.read(currentProfileProvider.future);
+      }
+    } catch (_) {
+      profile = null;
     }
 
     final isAdminRoute = state.matchedLocation.startsWith('/admin');
