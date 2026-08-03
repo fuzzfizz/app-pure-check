@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/product.dart';
 import '../../../core/models/analysis_result.dart';
-import '../../../core/services/beauty_facts_service.dart';
-import '../../../core/services/gemini_service.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../data/repositories/scan_repository_impl.dart';
+import '../domain/repositories/scan_repository.dart';
 
 enum ScanStep { idle, scanning, fetching, verifying, manualEntry, analyzing, error }
 
@@ -41,8 +41,6 @@ class ScanState {
 
 class ScanNotifier extends StateNotifier<ScanState> {
   final Ref ref;
-  final BeautyFactsService _beautyFactsService = BeautyFactsService();
-  final GeminiService _geminiService = GeminiService();
 
   ScanNotifier(this.ref) : super(ScanState());
 
@@ -57,13 +55,8 @@ class ScanNotifier extends StateNotifier<ScanState> {
   Future<void> onBarcodeScanned(String barcode) async {
     state = state.copyWith(step: ScanStep.fetching, barcode: barcode);
     try {
-      final supabaseService = ref.read(supabaseServiceProvider);
-      
-      // 1. Check local DB
-      var product = await supabaseService.getProductByBarcode(barcode);
-      
-      // 2. Check Open Beauty Facts
-      product ??= await _beautyFactsService.fetchByBarcode(barcode);
+      final repository = ref.read(scanRepositoryProvider);
+      final product = await repository.fetchProductByBarcode(barcode);
 
       if (product != null) {
         state = state.copyWith(step: ScanStep.verifying, product: product);
@@ -94,10 +87,11 @@ class ScanNotifier extends StateNotifier<ScanState> {
       final user = ref.read(currentUserProvider);
       if (user == null) throw Exception('User not logged in');
 
+      final repository = ref.read(scanRepositoryProvider);
       final supabaseService = ref.read(supabaseServiceProvider);
 
       // Save/update product in local DB first to get a valid product ID
-      final savedProduct = await supabaseService.upsertProduct(finalProduct);
+      final savedProduct = await repository.upsertProduct(finalProduct);
 
       // Fetch user profile and allergens
       final profile = await supabaseService.getProfile(user.id);
@@ -106,14 +100,14 @@ class ScanNotifier extends StateNotifier<ScanState> {
       if (profile == null) throw Exception('Profile not found');
 
       // AI Analyze
-      final analysis = await _geminiService.analyzeIngredients(
+      final analysis = await repository.analyzeIngredients(
         profile: profile,
         allergens: allergens,
         ingredients: savedProduct.ingredients,
       );
 
       // Save scan history
-      await supabaseService.addScanHistory(
+      await repository.saveScanHistory(
         userId: user.id,
         productId: savedProduct.id,
         result: analysis,
@@ -131,3 +125,4 @@ class ScanNotifier extends StateNotifier<ScanState> {
 final scanNotifierProvider = StateNotifierProvider<ScanNotifier, ScanState>((ref) {
   return ScanNotifier(ref);
 });
+
