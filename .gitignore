@@ -46,3 +46,11 @@ app.*.map.json
 
 # Local environment variables (contains API keys — do not commit)
 .env
+.env.*
+!.env.example
+
+# Temporary agent execution artifacts & logs
+.superpowers/
+.agents/
+.obsidian/
+SKILL.md
