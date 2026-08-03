@@ -34,15 +34,16 @@ Future<String?> appRedirect(dynamic ref, BuildContext context, GoRouterState sta
     if (state.matchedLocation == '/splash') return null;
 
     UserProfile? profile;
-    try {
-      final profileAsync = ref.read(currentProfileProvider);
-      if (profileAsync.hasValue && !profileAsync.isLoading) {
-        profile = profileAsync.value;
-      } else {
+    final profileAsync = ref.read(currentProfileProvider);
+    if (profileAsync.hasValue) {
+      profile = profileAsync.value;
+    }
+    if (profile == null || profileAsync.isLoading) {
+      try {
         profile = await ref.read(currentProfileProvider.future);
+      } catch (_) {
+        profile ??= profileAsync.asData?.value;
       }
-    } catch (_) {
-      profile = null;
     }
 
     final isAdminRoute = state.matchedLocation.startsWith('/admin');
