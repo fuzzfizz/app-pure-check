@@ -139,4 +139,43 @@ Rules:
       return null;
     }
   }
+
+  /// Checks a list of unknown/unrecognized ingredient terms for typos using Gemini AI
+  /// and returns a map of typo -> corrected standard INCI name.
+  Future<Map<String, String>> checkIngredientTypos(List<String> unknownIngredients) async {
+    if (unknownIngredients.isEmpty) return {};
+
+    final prompt = '''
+Correct these cosmetic/skincare ingredient typos to standard INCI names.
+Input terms: ${jsonEncode(unknownIngredients)}
+
+Return ONLY valid JSON map of typo -> corrected standard INCI name.
+Example format:
+{
+  "Niacinmid": "Niacinamide",
+  "Watar": "Water"
+}
+
+Rules:
+- If a term is already correct or is a valid custom ingredient, do NOT include it in the map.
+- Keys must be exact string matches from the input terms.
+- Values must be standard INCI names.
+''';
+
+    try {
+      final model = await _getModel();
+      final response = await model.generateContent([Content.text(prompt)]);
+      final text = response.text ?? '{}';
+      final json = jsonDecode(text) as Map<String, dynamic>;
+      final Map<String, String> result = {};
+      json.forEach((key, value) {
+        if (value is String && value.isNotEmpty && key.trim().toLowerCase() != value.trim().toLowerCase()) {
+          result[key] = value;
+        }
+      });
+      return result;
+    } catch (_) {
+      return {};
+    }
+  }
 }
