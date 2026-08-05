@@ -143,6 +143,48 @@ void main() {
 
       expect(redirectResult, equals('/login'));
     });
+
+    test('appRedirect called with ProviderRef redirects user needing onboarding from /register to /onboarding', () async {
+      final unonboardedProfile = UserProfile.empty('test-user-id').copyWith(
+        onboardingComplete: false,
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          currentUserProvider.overrideWithValue(mockUser),
+          currentProfileProvider.overrideWith((ref) async => unonboardedProfile),
+        ],
+      );
+      container.read(authNotifierProvider.notifier).setUserAndProfile(mockUser, unonboardedProfile);
+      addTearDown(container.dispose);
+
+      // Create dummy provider to get a ProviderRef
+      late Ref providerRef;
+      final testProvider = Provider((ref) {
+        providerRef = ref;
+        return true;
+      });
+      container.read(testProvider);
+
+      final router = container.read(routerProvider);
+      final state = GoRouterState(
+        router.configuration,
+        uri: Uri.parse('/register'),
+        matchedLocation: '/register',
+        fullPath: '/register',
+        pathParameters: const {},
+        pageKey: const ValueKey('/register'),
+      );
+
+      final redirectResult = appRedirect(
+        providerRef,
+        FakeBuildContext(),
+        state,
+      );
+
+      expect(redirectResult, equals('/onboarding'));
+    });
   });
 }
+
 

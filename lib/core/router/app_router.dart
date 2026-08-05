@@ -32,6 +32,8 @@ String? appRedirect(dynamic ref, BuildContext context, GoRouterState state) {
   AuthStateData authData;
   if (ref is WidgetRef) {
     authData = ref.read(authNotifierProvider);
+  } else if (ref is Ref) {
+    authData = ref.read(authNotifierProvider);
   } else if (ref is ProviderContainer) {
     authData = ref.read(authNotifierProvider);
   } else {
@@ -42,7 +44,7 @@ String? appRedirect(dynamic ref, BuildContext context, GoRouterState state) {
     if (user == null) {
       authData = const AuthStateData(status: AuthStatus.unauthenticated);
     } else {
-      authData = AuthStateData(status: AuthStatus.authenticated, user: user);
+      authData = const AuthStateData(status: AuthStatus.loading);
     }
   }
 
