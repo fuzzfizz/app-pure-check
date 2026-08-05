@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -32,7 +33,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
       );
-      if (mounted) context.go('/home');
+      if (mounted) {
+        await ref.read(authNotifierProvider.notifier).refreshProfile();
+        if (!mounted) return;
+        final status = ref.read(authNotifierProvider).status;
+        if (status == AuthStatus.needsOnboarding) {
+          context.go('/onboarding');
+        } else {
+          context.go('/home');
+        }
+      }
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {

@@ -86,5 +86,63 @@ void main() {
 
       expect(redirectResult, isNull);
     });
+
+    test('User with incomplete onboarding accessing /onboarding is allowed', () async {
+      final unonboardedProfile = UserProfile.empty('test-user-id').copyWith(
+        onboardingComplete: false,
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          currentUserProvider.overrideWithValue(mockUser),
+          currentProfileProvider.overrideWith((ref) async => unonboardedProfile),
+        ],
+      );
+      container.read(authNotifierProvider.notifier).setUserAndProfile(mockUser, unonboardedProfile);
+      addTearDown(container.dispose);
+
+      final router = container.read(routerProvider);
+      final state = GoRouterState(
+        router.configuration,
+        uri: Uri.parse('/onboarding'),
+        matchedLocation: '/onboarding',
+        fullPath: '/onboarding',
+        pathParameters: const {},
+        pageKey: const ValueKey('/onboarding'),
+      );
+
+      final redirectResult = appRedirect(
+        container,
+        FakeBuildContext(),
+        state,
+      );
+
+      expect(redirectResult, isNull);
+    });
+
+    test('Unauthenticated user accessing /onboarding is redirected to /login', () async {
+      final container = ProviderContainer();
+      container.read(authNotifierProvider.notifier).setUserAndProfile(null, null);
+      addTearDown(container.dispose);
+
+      final router = container.read(routerProvider);
+      final state = GoRouterState(
+        router.configuration,
+        uri: Uri.parse('/onboarding'),
+        matchedLocation: '/onboarding',
+        fullPath: '/onboarding',
+        pathParameters: const {},
+        pageKey: const ValueKey('/onboarding'),
+      );
+
+      final redirectResult = appRedirect(
+        container,
+        FakeBuildContext(),
+        state,
+      );
+
+      expect(redirectResult, equals('/login'));
+    });
   });
 }
+

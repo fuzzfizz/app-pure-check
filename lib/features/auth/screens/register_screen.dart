@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/models/user_profile.dart';
 import '../../../core/theme/app_theme.dart';
+import '../providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -37,11 +39,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
     setState(() { _loading = true; _error = null; });
     try {
-      await Supabase.instance.client.auth.signUp(
+      final res = await Supabase.instance.client.auth.signUp(
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
       );
-      if (mounted) context.go('/onboarding');
+      if (mounted) {
+        if (res.session == null && res.user != null) {
+          setState(() {
+            _error = l10n.localeName == 'th'
+                ? 'สมัครสมาชิกสำเร็จ โปรดยืนยันอีเมลของคุณก่อนเข้าสู่ระบบ'
+                : 'Registration successful! Please check your email to confirm.';
+          });
+        } else {
+          final user = res.user ?? Supabase.instance.client.auth.currentUser;
+          ref.read(authNotifierProvider.notifier).setUserAndProfile(
+            user,
+            user != null ? UserProfile.empty(user.id) : null,
+          );
+          context.go('/onboarding');
+        }
+      }
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
