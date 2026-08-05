@@ -31,6 +31,7 @@ void main() {
           currentProfileProvider.overrideWith((ref) async => nonAdminProfile),
         ],
       );
+      container.read(authNotifierProvider.notifier).setUserAndProfile(mockUser, nonAdminProfile);
       addTearDown(container.dispose);
 
       final router = container.read(routerProvider);
@@ -43,7 +44,7 @@ void main() {
         pageKey: const ValueKey('/admin/review'),
       );
 
-      final redirectResult = await appRedirect(
+      final redirectResult = appRedirect(
         container,
         FakeBuildContext(),
         state,
@@ -64,6 +65,7 @@ void main() {
           currentProfileProvider.overrideWith((ref) async => adminProfile),
         ],
       );
+      container.read(authNotifierProvider.notifier).setUserAndProfile(mockUser, adminProfile);
       addTearDown(container.dispose);
 
       final router = container.read(routerProvider);
@@ -76,7 +78,7 @@ void main() {
         pageKey: const ValueKey('/admin/review'),
       );
 
-      final redirectResult = await appRedirect(
+      final redirectResult = appRedirect(
         container,
         FakeBuildContext(),
         state,

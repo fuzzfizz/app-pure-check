@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
@@ -22,17 +21,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Future<void> _navigate() async {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
-      context.go('/intro');
-    } else {
-      final profile = await ref.read(currentProfileProvider.future);
-      if (!mounted) return;
-      if (profile == null || !profile.onboardingComplete) {
+    await ref.read(authNotifierProvider.notifier).refreshProfile();
+    if (!mounted) return;
+    final status = ref.read(authNotifierProvider).status;
+    switch (status) {
+      case AuthStatus.unauthenticated:
+        context.go('/intro');
+        break;
+      case AuthStatus.needsOnboarding:
         context.go('/onboarding');
-      } else {
+        break;
+      case AuthStatus.authenticated:
         context.go('/home');
-      }
+        break;
+      case AuthStatus.loading:
+        context.go('/intro');
+        break;
     }
   }
 

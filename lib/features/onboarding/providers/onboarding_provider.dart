@@ -100,7 +100,14 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       final supabaseService = ref.read(supabaseServiceProvider);
 
       // Create profile preserving role
-      final existingProfile = ref.read(currentProfileProvider).asData?.value;
+      UserProfile? existingProfile = ref.read(currentProfileProvider).asData?.value;
+      if (existingProfile == null) {
+        try {
+          existingProfile = await supabaseService.getProfile(user.id);
+        } catch (_) {}
+      }
+      final role = existingProfile?.role ?? 'user';
+
       final profile = UserProfile(
         id: user.id,
         skinType: state.skinType,
@@ -108,13 +115,12 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         skinConcerns: state.skinConcerns,
         avoidPreferences: state.avoidPreferences,
         onboardingComplete: true,
-        role: existingProfile?.role ?? 'user',
+        role: role,
       );
 
       // Save profile
       await supabaseService.upsertProfile(profile);
-      ref.invalidate(currentProfileProvider);
-      await ref.read(currentProfileProvider.future);
+      await ref.read(authNotifierProvider.notifier).refreshProfile();
 
       // Save allergens
       for (final allergen in state.allergens) {

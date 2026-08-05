@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/user_profile.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/intro_screen.dart';
@@ -18,55 +17,70 @@ import '../../features/account/screens/history_screen.dart';
 import '../../features/account/screens/settings_screen.dart';
 import '../../features/admin/screens/admin_review_screen.dart';
 
-Future<String?> appRedirect(dynamic ref, BuildContext context, GoRouterState state) async {
-  User? user;
-  try {
-    user = Supabase.instance.client.auth.currentUser;
-  } catch (_) {}
-  user ??= ref.read(currentUserProvider);
-  final publicRoutes = ['/splash', '/intro', '/login', '/register'];
-  final isPublic = publicRoutes.any((r) => state.matchedLocation.startsWith(r));
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+  RouterNotifier(this._ref) {
+    _ref.listen<AuthStateData>(authNotifierProvider, (_, __) => notifyListeners());
+  }
+}
 
-  if (user == null && !isPublic) return '/login';
+final routerNotifierProvider = Provider<RouterNotifier>((ref) {
+  return RouterNotifier(ref);
+});
 
-  if (user != null) {
-    // Skip check on splash screen (handled by splash timer)
-    if (state.matchedLocation == '/splash') return null;
-
-    UserProfile? profile;
-    final profileAsync = ref.read(currentProfileProvider);
-    if (profileAsync.hasValue) {
-      profile = profileAsync.value;
-    }
-    if (profile == null || profileAsync.isLoading) {
-      try {
-        profile = await ref.read(currentProfileProvider.future);
-      } catch (_) {
-        profile ??= profileAsync.asData?.value;
-      }
-    }
-
-    final isAdminRoute = state.matchedLocation.startsWith('/admin');
-
-    if (isAdminRoute && (profile == null || !profile.isAdmin)) {
-      return '/home';
-    }
-
-    final isOnboarding = state.matchedLocation.startsWith('/onboarding');
-
-    if (profile == null || !profile.onboardingComplete) {
-      if (!isOnboarding) return '/onboarding';
+String? appRedirect(dynamic ref, BuildContext context, GoRouterState state) {
+  AuthStateData authData;
+  if (ref is WidgetRef) {
+    authData = ref.read(authNotifierProvider);
+  } else if (ref is ProviderContainer) {
+    authData = ref.read(authNotifierProvider);
+  } else {
+    User? user;
+    try {
+      user = Supabase.instance.client.auth.currentUser;
+    } catch (_) {}
+    if (user == null) {
+      authData = const AuthStateData(status: AuthStatus.unauthenticated);
     } else {
-      if (isOnboarding || isPublic) return '/home';
+      authData = AuthStateData(status: AuthStatus.authenticated, user: user);
     }
   }
 
-  return null;
+  final publicRoutes = ['/splash', '/intro', '/login', '/register'];
+  final isPublic = publicRoutes.any((r) => state.matchedLocation.startsWith(r));
+  final isOnboarding = state.matchedLocation.startsWith('/onboarding');
+  final isAdminRoute = state.matchedLocation.startsWith('/admin');
+
+  switch (authData.status) {
+    case AuthStatus.loading:
+      if (state.matchedLocation == '/splash') return null;
+      return null;
+
+    case AuthStatus.unauthenticated:
+      if (isPublic) return null;
+      return '/login';
+
+    case AuthStatus.needsOnboarding:
+      if (isOnboarding) return null;
+      return '/onboarding';
+
+    case AuthStatus.authenticated:
+      final profile = authData.profile;
+      if (isAdminRoute && (profile == null || !profile.isAdmin)) {
+        return '/home';
+      }
+      if (isOnboarding || isPublic) {
+        return '/home';
+      }
+      return null;
+  }
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final notifier = ref.watch(routerNotifierProvider);
   return GoRouter(
     initialLocation: '/splash',
+    refreshListenable: notifier,
     redirect: (context, state) => appRedirect(ref, context, state),
     routes: [
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
