@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,8 +7,11 @@ import '../../config/app_config.dart';
 import '../models/allergen.dart';
 import '../models/user_profile.dart';
 import '../models/analysis_result.dart';
+import 'deepseek_service.dart';
 
 class GeminiService {
+  final DeepSeekService _deepSeekService = DeepSeekService();
+
   GeminiService();
 
   Future<GenerativeModel> _getModel() async {
@@ -65,13 +69,22 @@ Rules:
 - Only flag ingredients that are genuinely concerning for this user's profile
 ''';
 
-    final model = await _getModel();
-    final response = await model.generateContent([Content.text(prompt)]);
-    final text = response.text ?? '{}';
     try {
+      final model = await _getModel();
+      final response = await model.generateContent([Content.text(prompt)]);
+      final text = response.text ?? '{}';
       final json = jsonDecode(text) as Map<String, dynamic>;
       return AnalysisResult.fromJson(json);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('GeminiService error ($e). Attempting fallback to DeepSeekService...');
+      final deepSeekResult = await _deepSeekService.analyzeIngredients(
+        profile: profile,
+        allergens: allergens,
+        ingredients: ingredients,
+      );
+      if (deepSeekResult != null) {
+        return deepSeekResult;
+      }
       return const AnalysisResult(
         overallSafety: SafetyLevel.caution,
         summaryTh: 'ไม่สามารถวิเคราะห์ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง',
@@ -175,7 +188,7 @@ Rules:
       });
       return result;
     } catch (_) {
-      return {};
+      return await _deepSeekService.checkIngredientTypos(unknownIngredients);
     }
   }
 }

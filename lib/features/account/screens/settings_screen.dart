@@ -5,7 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/gemini_api_key_provider.dart';
+import '../../../core/providers/deepseek_api_key_provider.dart';
 import '../../../core/services/gemini_service.dart';
+import '../../../core/services/deepseek_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -202,8 +204,170 @@ class SettingsScreen extends ConsumerWidget {
                               SnackBar(
                                 content: Text(
                                   isTh
-                                      ? (newKey.isEmpty ? 'รีเซ็ตเป็นคีย์ระบบเรียบร้อย' : 'บันทึก API Key สำเร็จ')
-                                      : (newKey.isEmpty ? 'Reset to system key' : 'API Key saved successfully'),
+                                      ? (newKey.isEmpty ? 'รีเซ็ตเป็นคีย์ระบบเรียบร้อย' : 'บันทึก Gemini API Key สำเร็จ')
+                                      : (newKey.isEmpty ? 'Reset to system key' : 'Gemini API Key saved successfully'),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                  child: Text(isTh ? 'บันทึก' : 'Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showDeepSeekApiKeyDialog(BuildContext context, WidgetRef ref, String? currentKey) {
+    final controller = TextEditingController(text: currentKey ?? '');
+    final isTh = ref.read(localeProvider).languageCode == 'th';
+    final deepSeekService = DeepSeekService();
+
+    bool isValidating = false;
+    String? validationMessage;
+    bool? isSuccess;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(isTh ? 'ตั้งค่า DeepSeek / OpenRouter API Key (สำรอง)' : 'DeepSeek / OpenRouter API Key Settings'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isTh
+                          ? 'ใส่ API Key ของ DeepSeek (sk-...) หรือ OpenRouter (sk-or-v1-...) เพื่อใช้สำรองเมื่อ Gemini หมดโควต้า (ระบบจะสลับใช้ให้อัตโนมัติ)'
+                          : 'Enter a DeepSeek (sk-...) or OpenRouter (sk-or-v1-...) API Key as fallback when Gemini API limit is reached (Auto-routed).',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: 'DeepSeek / OpenRouter API Key',
+                        hintText: 'sk-... หรือ sk-or-v1-...',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.clear_rounded),
+                          onPressed: () => controller.clear(),
+                        ),
+                      ),
+                    ),
+                    if (isValidating) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            isTh ? 'กำลังทดสอบคีย์...' : 'Testing key...',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ] else if (validationMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            isSuccess == true
+                                ? Icons.check_circle_outline_rounded
+                                : Icons.error_outline_rounded,
+                            color: isSuccess == true ? AppColors.safe : AppColors.danger,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              validationMessage!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isSuccess == true ? AppColors.safe : AppColors.danger,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(isTh ? 'ยกเลิก' : 'Cancel'),
+                ),
+                TextButton(
+                  onPressed: isValidating
+                      ? null
+                      : () async {
+                          final key = controller.text.trim();
+                          if (key.isEmpty) {
+                            setState(() {
+                              validationMessage = isTh
+                                  ? 'กรุณากรอก API Key ก่อนทดสอบ'
+                                  : 'Please enter an API Key to test';
+                              isSuccess = false;
+                            });
+                            return;
+                          }
+
+                          setState(() {
+                            isValidating = true;
+                            validationMessage = null;
+                            isSuccess = null;
+                          });
+
+                          final error = await deepSeekService.validateApiKey(key);
+                          final isOpenRouter = deepSeekService.isOpenRouterKey(key);
+
+                          setState(() {
+                            isValidating = false;
+                            if (error == null) {
+                              validationMessage = isTh
+                                  ? (isOpenRouter
+                                      ? 'คีย์ OpenRouter ใช้งานได้ปกติ (Model: deepseek/deepseek-chat)'
+                                      : 'คีย์ DeepSeek ใช้งานได้ปกติ (Model: deepseek-chat)')
+                                  : (isOpenRouter
+                                      ? 'OpenRouter key valid (Model: deepseek/deepseek-chat)'
+                                      : 'DeepSeek key valid (Model: deepseek-chat)');
+                              isSuccess = true;
+                            } else {
+                              validationMessage = error;
+                              isSuccess = false;
+                            }
+                          });
+                        },
+                  child: Text(isTh ? 'ทดสอบคีย์' : 'Test Key'),
+                ),
+                ElevatedButton(
+                  onPressed: isValidating
+                      ? null
+                      : () async {
+                          final newKey = controller.text.trim();
+                          await ref.read(deepSeekApiKeyProvider.notifier).setKey(newKey.isEmpty ? null : newKey);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  isTh
+                                      ? (newKey.isEmpty ? 'รีเซ็ตเป็นคีย์ DeepSeek ระบบเรียบร้อย' : 'บันทึก DeepSeek API Key สำเร็จ')
+                                      : (newKey.isEmpty ? 'Reset to system key' : 'DeepSeek API Key saved successfully'),
                                 ),
                               ),
                             );
@@ -222,7 +386,8 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final apiKey = ref.watch(geminiApiKeyProvider);
+    final geminiApiKey = ref.watch(geminiApiKeyProvider);
+    final deepSeekApiKey = ref.watch(deepSeekApiKeyProvider);
     final isTh = ref.watch(localeProvider).languageCode == 'th';
     final profileAsync = ref.watch(currentProfileProvider);
     final profile = profileAsync.asData?.value;
@@ -256,8 +421,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(),
 
-          // API Key section
-          _buildSectionHeader(isTh ? 'ตั้งค่า API Key (เสริม)' : 'API Key Settings (Optional)'),
+          // API Key section - Gemini
+          _buildSectionHeader(isTh ? 'ตั้งค่า AI API Key หลัก & สำรอง (Optional)' : 'Primary & Fallback AI API Keys'),
           SwitchListTile(
             title: Text(isTh ? 'ใช้ Gemini API Key ส่วนตัว' : 'Use Custom Gemini API Key'),
             subtitle: Text(
@@ -269,9 +434,9 @@ class SettingsScreen extends ConsumerWidget {
             activeThumbColor: AppColors.primary,
             onChanged: (val) async {
               await ref.read(useCustomGeminiKeyProvider.notifier).setUseCustomKey(val);
-              if (val && (apiKey == null || apiKey.trim().isEmpty)) {
+              if (val && (geminiApiKey == null || geminiApiKey.trim().isEmpty)) {
                 if (context.mounted) {
-                  _showApiKeyDialog(context, ref, apiKey);
+                  _showApiKeyDialog(context, ref, geminiApiKey);
                 }
               }
             },
@@ -281,15 +446,52 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.vpn_key_rounded, color: AppColors.primary),
             title: Text(isTh ? 'กรอก Gemini API Key' : 'Enter Gemini API Key'),
             subtitle: Text(
-              apiKey != null && apiKey.isNotEmpty
+              geminiApiKey != null && geminiApiKey.isNotEmpty
                   ? (isTh
-                      ? 'คีย์ส่วนตัว: ${apiKey.length >= 8 ? "${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}" : apiKey}'
-                      : 'Custom Key: ${apiKey.length >= 8 ? "${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}" : apiKey}')
+                      ? 'คีย์ส่วนตัว: ${geminiApiKey.length >= 8 ? "${geminiApiKey.substring(0, 4)}...${geminiApiKey.substring(geminiApiKey.length - 4)}" : geminiApiKey}'
+                      : 'Custom Key: ${geminiApiKey.length >= 8 ? "${geminiApiKey.substring(0, 4)}...${geminiApiKey.substring(geminiApiKey.length - 4)}" : geminiApiKey}')
                   : (isTh ? 'ยังไม่ได้ตั้งค่าคีย์' : 'No key set'),
             ),
             trailing: const Icon(Icons.edit_rounded, size: 20),
             onTap: ref.watch(useCustomGeminiKeyProvider)
-                ? () => _showApiKeyDialog(context, ref, apiKey)
+                ? () => _showApiKeyDialog(context, ref, geminiApiKey)
+                : null,
+          ),
+          const SizedBox(height: 8),
+
+          // API Key section - DeepSeek Fallback
+          SwitchListTile(
+            title: Text(isTh ? 'ใช้ DeepSeek API Key ส่วนตัว (สำรอง)' : 'Use Custom DeepSeek API Key (Fallback)'),
+            subtitle: Text(
+              isTh
+                  ? 'ใช้สำรองอัตโนมัติเมื่อ Gemini API หมดโควต้า'
+                  : 'Used automatically when Gemini API quota runs out',
+            ),
+            value: ref.watch(useCustomDeepSeekKeyProvider),
+            activeThumbColor: AppColors.primaryDark,
+            onChanged: (val) async {
+              await ref.read(useCustomDeepSeekKeyProvider.notifier).setUseCustomKey(val);
+              if (val && (deepSeekApiKey == null || deepSeekApiKey.trim().isEmpty)) {
+                if (context.mounted) {
+                  _showDeepSeekApiKeyDialog(context, ref, deepSeekApiKey);
+                }
+              }
+            },
+          ),
+          ListTile(
+            enabled: ref.watch(useCustomDeepSeekKeyProvider),
+            leading: const Icon(Icons.psychology_outlined, color: AppColors.primaryDark),
+            title: Text(isTh ? 'กรอก DeepSeek API Key' : 'Enter DeepSeek API Key'),
+            subtitle: Text(
+              deepSeekApiKey != null && deepSeekApiKey.isNotEmpty
+                  ? (isTh
+                      ? 'คีย์สำรอง: ${deepSeekApiKey.length >= 8 ? "${deepSeekApiKey.substring(0, 4)}...${deepSeekApiKey.substring(deepSeekApiKey.length - 4)}" : deepSeekApiKey}'
+                      : 'Fallback Key: ${deepSeekApiKey.length >= 8 ? "${deepSeekApiKey.substring(0, 4)}...${deepSeekApiKey.substring(deepSeekApiKey.length - 4)}" : deepSeekApiKey}')
+                  : (isTh ? 'ยังไม่ได้ตั้งค่าคีย์สำรอง' : 'No fallback key set'),
+            ),
+            trailing: const Icon(Icons.edit_rounded, size: 20),
+            onTap: ref.watch(useCustomDeepSeekKeyProvider)
+                ? () => _showDeepSeekApiKeyDialog(context, ref, deepSeekApiKey)
                 : null,
           ),
           const Divider(),

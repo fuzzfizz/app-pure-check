@@ -200,13 +200,71 @@ Rules:
             const cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
             geminiResult = JSON.parse(cleanedText);
           }
+        } else {
+          console.warn(`Gemini API returned status ${response.status}. Attempting DeepSeek API fallback...`);
         }
       } catch (geminiErr) {
         console.error('Error making HTTPS request to Gemini API:', geminiErr);
       }
     }
 
-    // Default response structure if Gemini API is unavailable
+    // 4b. Fallback to DeepSeek or OpenRouter API if Gemini API is unavailable or failed
+    const deepseekApiKey = (Deno.env.get('DEEPSEEK_API_KEY') || Deno.env.get('OPENROUTER_API_KEY') || '').trim();
+    if (!geminiResult && deepseekApiKey) {
+      try {
+        const isOpenRouter = deepseekApiKey.toLowerCase().startsWith('sk-or-');
+        const fallbackUrl = isOpenRouter
+          ? 'https://openrouter.ai/api/v1/chat/completions'
+          : 'https://api.deepseek.com/chat/completions';
+        const modelName = isOpenRouter ? 'deepseek/deepseek-chat' : 'deepseek-chat';
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepseekApiKey}`
+        };
+        if (isOpenRouter) {
+          headers['HTTP-Referer'] = 'https://purecheck.app';
+          headers['X-Title'] = 'PureCheck';
+        }
+
+        console.log(`Attempting analysis via ${isOpenRouter ? 'OpenRouter' : 'DeepSeek'} API...`);
+        const response = await fetch(fallbackUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a professional cosmetic dermatologist and ingredient safety analyst. Return ONLY valid JSON.'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.2
+          })
+        });
+
+        if (response.ok) {
+          const fallbackData = await response.json();
+          const contentText = fallbackData?.choices?.[0]?.message?.content;
+          if (contentText) {
+            const cleanedText = contentText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            geminiResult = JSON.parse(cleanedText);
+            console.log(`${isOpenRouter ? 'OpenRouter' : 'DeepSeek'} API analysis successful!`);
+          }
+        } else {
+          console.error(`${isOpenRouter ? 'OpenRouter' : 'DeepSeek'} API returned error status: ${response.status}`);
+        }
+      } catch (fallbackErr) {
+        console.error('Error making HTTPS request to fallback API:', fallbackErr);
+      }
+    }
+
+    // Default response structure if both Gemini and DeepSeek APIs are unavailable
     if (!geminiResult) {
       geminiResult = {
         overall_safety: "safe",
