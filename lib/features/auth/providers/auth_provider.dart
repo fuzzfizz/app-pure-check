@@ -104,6 +104,17 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
       profile: p,
     );
   }
+
+  void updateProfile(UserProfile profile) {
+    final currentUser = state.user ?? _getSafeCurrentUser();
+    if (currentUser != null) {
+      state = AuthStateData(
+        status: profile.onboardingComplete ? AuthStatus.authenticated : AuthStatus.needsOnboarding,
+        user: currentUser,
+        profile: profile,
+      );
+    }
+  }
 }
 
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthStateData>((ref) {

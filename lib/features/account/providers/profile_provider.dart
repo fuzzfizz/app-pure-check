@@ -27,10 +27,12 @@ class ProfileNotifier extends StateNotifier<AsyncValue<void>> {
     try {
       final service = ref.read(supabaseServiceProvider);
       await service.upsertProfile(profile);
+      ref.read(authNotifierProvider.notifier).updateProfile(profile);
       ref.invalidate(currentProfileProvider);
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+      rethrow;
     }
   }
 
@@ -53,6 +55,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+      rethrow;
     }
   }
 
@@ -65,6 +68,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+      rethrow;
     }
   }
 }

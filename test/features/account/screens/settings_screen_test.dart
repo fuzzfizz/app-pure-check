@@ -30,6 +30,7 @@ void main() {
     await tester.pumpWidget(buildWidget(profile: adminProfile));
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('Admin Product Review'), 200);
     expect(find.text('Admin Product Review'), findsOneWidget);
   });
 
