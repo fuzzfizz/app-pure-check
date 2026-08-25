@@ -7,7 +7,6 @@ import 'package:pure_check/core/models/allergen.dart';
 import 'package:pure_check/core/models/user_profile.dart';
 import 'package:pure_check/core/services/supabase_service.dart';
 import 'package:pure_check/features/auth/providers/auth_provider.dart';
-import 'package:pure_check/features/account/providers/profile_provider.dart';
 import 'package:pure_check/features/account/screens/profile_screen.dart';
 
 class FakeSupabaseService extends Fake implements SupabaseService {

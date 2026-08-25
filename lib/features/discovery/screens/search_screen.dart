@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/app_localizations.dart';
@@ -108,7 +109,39 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
-            leading: const Icon(Icons.shopping_bag_outlined, color: AppColors.primary),
+            leading: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.mintBg),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: product.imageUrl != null && product.imageUrl!.trim().isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: product.imageUrl!,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => const Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => const Center(
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          color: AppColors.textHint,
+                          size: 20,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      color: AppColors.mintBg,
+                      child: const Icon(Icons.shopping_bag_outlined, color: AppColors.primary),
+                    ),
+            ),
             title: Text(
               product.name,
               style: const TextStyle(fontWeight: FontWeight.w600),

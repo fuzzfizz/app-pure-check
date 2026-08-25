@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/app_localizations.dart';
@@ -85,7 +86,42 @@ class _VerifyProductScreenState extends ConsumerState<VerifyProductScreen> {
               l10n.verifyIngredientsHint,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+            if (widget.product.imageUrl != null && widget.product.imageUrl!.trim().isNotEmpty) ...[
+              Center(
+                child: Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.mintBg, width: 1.5),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: CachedNetworkImage(
+                    imageUrl: widget.product.imageUrl!,
+                    fit: BoxFit.contain,
+                    placeholder: (context, url) => const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    errorWidget: (context, url, error) => Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.broken_image_outlined, size: 40, color: AppColors.textHint),
+                          const SizedBox(height: 4),
+                          Text(
+                            l10n.localeName == 'th' ? 'ไม่สามารถโหลดรูปภาพได้' : 'Unable to load image',
+                            style: const TextStyle(color: AppColors.textHint, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
             TextField(
               controller: _nameCtrl,
               decoration: InputDecoration(

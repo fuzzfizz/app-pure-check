@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -231,6 +232,7 @@ class HomeScreen extends ConsumerWidget {
                         final product = item['products'] as Map<String, dynamic>? ?? {};
                         final name = product['name'] as String? ?? 'Unknown Product';
                         final brand = product['brand'] as String? ?? '';
+                        final imageUrl = product['image_url'] as String?;
                         final safetyText = item['safety_level'] as String? ?? 'caution';
                         final safety = SafetyLevel.values.firstWhere(
                           (e) => e.name == safetyText,
@@ -244,10 +246,34 @@ class HomeScreen extends ConsumerWidget {
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: AppColors.mintBg,
-                                borderRadius: BorderRadius.circular(8),
+                                color: AppColors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: AppColors.mintBg),
                               ),
-                              child: const Icon(Icons.bubble_chart_rounded, color: AppColors.primary),
+                              clipBehavior: Clip.antiAlias,
+                              child: imageUrl != null && imageUrl.trim().isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: imageUrl,
+                                      fit: BoxFit.contain,
+                                      placeholder: (context, url) => const Center(
+                                        child: SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) => const Center(
+                                        child: Icon(
+                                          Icons.image_not_supported_outlined,
+                                          color: AppColors.textHint,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      color: AppColors.mintBg,
+                                      child: const Icon(Icons.bubble_chart_rounded, color: AppColors.primary),
+                                    ),
                             ),
                             title: Text(
                               name,

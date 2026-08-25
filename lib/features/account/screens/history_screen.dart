@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -54,6 +55,7 @@ class HistoryScreen extends ConsumerWidget {
                 final product = item['products'] as Map<String, dynamic>? ?? {};
                 final name = product['name'] as String? ?? 'Unknown Product';
                 final brand = product['brand'] as String? ?? l10n.unknownBrand;
+                final imageUrl = product['image_url'] as String?;
                 final safetyText = item['safety_level'] as String? ?? 'caution';
                 final safety = SafetyLevel.values.firstWhere(
                   (e) => e.name == safetyText,
@@ -66,15 +68,55 @@ class HistoryScreen extends ConsumerWidget {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
-                    leading: const Icon(Icons.qr_code_2_rounded, color: AppColors.primary),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.mintBg),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: imageUrl != null && imageUrl.trim().isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              fit: BoxFit.contain,
+                              placeholder: (context, url) => const Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => const Center(
+                                child: Icon(
+                                  Icons.image_not_supported_outlined,
+                                  color: AppColors.textHint,
+                                  size: 24,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              color: AppColors.mintBg,
+                              child: const Icon(
+                                Icons.spa_rounded,
+                                color: AppColors.primary,
+                                size: 26,
+                              ),
+                            ),
+                    ),
                     title: Text(
                       name,
                       style: const TextStyle(fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(brand),
+                        const SizedBox(height: 2),
+                        Text(brand, maxLines: 1, overflow: TextOverflow.ellipsis),
                         const SizedBox(height: 4),
                         Text(
                           formattedDate,
