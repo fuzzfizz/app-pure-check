@@ -5,6 +5,7 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/analysis_result.dart';
 import '../../../core/models/product.dart';
 import '../../../core/models/allergen.dart';
+import '../../../core/services/admin_moderation_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/safety_badge.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -343,17 +344,18 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                   ElevatedButton.icon(
                     onPressed: () async {
                       try {
+                        final user = ref.read(currentUserProvider);
                         final supabaseService = ref.read(supabaseServiceProvider);
-                        final updatedProduct = Product(
-                          id: product.id,
-                          barcode: product.barcode,
-                          name: product.name,
-                          brand: product.brand,
-                          ingredients: product.ingredients,
-                          rawIngredientsText: product.rawIngredientsText,
-                          source: product.source,
+                        final moderationService = ref.read(adminModerationServiceProvider);
+                        final evaluation = await moderationService.evaluateProduct(product);
+
+                        final updatedProduct = product.copyWith(
+                          status: 'pending',
+                          isVerified: false,
+                          submittedBy: user?.id,
                           verifiedCount: product.verifiedCount + 1,
-                          imageUrl: product.imageUrl,
+                          confidenceScore: evaluation.confidenceScore,
+                          aiFlags: evaluation.flags,
                         );
                         await supabaseService.upsertProduct(updatedProduct);
                         if (context.mounted) {

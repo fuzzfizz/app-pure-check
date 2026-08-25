@@ -211,21 +211,35 @@ class _AdminReviewScreenState extends ConsumerState<AdminReviewScreen> {
                       ),
                     ),
                     Expanded(
-                      child: _items.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'No pending products to review',
-                                style: TextStyle(fontSize: 16),
+                      child: RefreshIndicator(
+                        onRefresh: _loadPendingProducts,
+                        child: _items.isEmpty
+                            ? ListView(
+                                children: const [
+                                  SizedBox(height: 120),
+                                  Center(
+                                    child: Column(
+                                      children: [
+                                        Icon(Icons.inbox_outlined, size: 48, color: Colors.grey),
+                                        SizedBox(height: 12),
+                                        Text(
+                                          'No pending products to review',
+                                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ListView.builder(
+                                itemCount: _items.length,
+                                padding: const EdgeInsets.all(12),
+                                itemBuilder: (context, index) {
+                                  final item = _items[index];
+                                  return _buildProductCard(item);
+                                },
                               ),
-                            )
-                          : ListView.builder(
-                              itemCount: _items.length,
-                              padding: const EdgeInsets.all(12),
-                              itemBuilder: (context, index) {
-                                final item = _items[index];
-                                return _buildProductCard(item);
-                              },
-                            ),
+                      ),
                     ),
                   ],
                 ),

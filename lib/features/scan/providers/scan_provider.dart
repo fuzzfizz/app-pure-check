@@ -89,8 +89,16 @@ class ScanNotifier extends StateNotifier<ScanState> {
       final repository = ref.read(scanRepositoryProvider);
       final supabaseService = ref.read(supabaseServiceProvider);
 
+      var productToSave = finalProduct;
+      if (productToSave.source == ProductSource.userEntered) {
+        productToSave = productToSave.copyWith(
+          status: productToSave.status == 'approved' ? 'pending' : productToSave.status,
+          submittedBy: productToSave.submittedBy ?? user.id,
+        );
+      }
+
       // Save/update product in local DB first to get a valid product ID
-      final savedProduct = await repository.upsertProduct(finalProduct);
+      final savedProduct = await repository.upsertProduct(productToSave);
 
       // Fetch user profile and allergens
       final profile = await supabaseService.getProfile(user.id);
