@@ -181,8 +181,8 @@ class SettingsScreen extends ConsumerWidget {
                             availableModels = models;
                             if (error == null) {
                               validationMessage = isTh
-                                  ? 'คีย์ใช้งานได้ปกติ (โมเดล Gemini 3.5 Flash พร้อม)'
-                                  : 'Key is valid (Gemini 3.5 Flash ready)';
+                                  ? 'คีย์ใช้งานได้ปกติ (โมเดล Gemini Flash พร้อมใช้งาน)'
+                                  : 'Key is valid (Gemini Flash ready)';
                               isSuccess = true;
                             } else {
                               validationMessage = error;

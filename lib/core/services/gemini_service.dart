@@ -12,18 +12,30 @@ import 'deepseek_service.dart';
 class GeminiService {
   final DeepSeekService _deepSeekService = DeepSeekService();
 
+  static const List<String> _candidateModels = [
+    'gemini-1.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.5-flash',
+    'gemini-1.5-pro',
+  ];
+
   GeminiService();
 
-  Future<GenerativeModel> _getModel() async {
+  Future<String> _getActiveApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     final useCustomKey = prefs.getBool('use_custom_gemini_api_key') ?? false;
     final customKey = prefs.getString('custom_gemini_api_key');
     final activeKey = (useCustomKey && customKey != null && customKey.trim().isNotEmpty)
         ? customKey.trim()
         : AppConfig.geminiApiKey;
+    return activeKey;
+  }
+
+  Future<GenerativeModel> _getModel({String modelName = 'gemini-1.5-flash'}) async {
+    final activeKey = await _getActiveApiKey();
 
     return GenerativeModel(
-      model: 'gemini-3.5-flash',
+      model: modelName,
       apiKey: activeKey,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',
@@ -69,58 +81,154 @@ Rules:
 - Only flag ingredients that are genuinely concerning for this user's profile
 ''';
 
-    try {
-      final model = await _getModel();
-      final response = await model.generateContent([Content.text(prompt)]);
-      final text = response.text ?? '{}';
-      final json = jsonDecode(text) as Map<String, dynamic>;
-      return AnalysisResult.fromJson(json);
-    } catch (e) {
-      debugPrint('GeminiService error ($e). Attempting fallback to DeepSeekService...');
-      final deepSeekResult = await _deepSeekService.analyzeIngredients(
-        profile: profile,
-        allergens: allergens,
-        ingredients: ingredients,
-      );
-      if (deepSeekResult != null) {
-        return deepSeekResult;
+    for (final modelName in _candidateModels) {
+      try {
+        final model = await _getModel(modelName: modelName);
+        final response = await model.generateContent([Content.text(prompt)]);
+        final text = response.text ?? '{}';
+        final json = jsonDecode(text) as Map<String, dynamic>;
+        return AnalysisResult.fromJson(json);
+      } catch (e) {
+        debugPrint('GeminiService model ($modelName) error: $e');
       }
-      return const AnalysisResult(
-        overallSafety: SafetyLevel.caution,
-        summaryTh: 'ไม่สามารถวิเคราะห์ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง',
-        summaryEn: 'Unable to analyze at this time. Please try again.',
-      );
     }
+
+    debugPrint('All Gemini models failed. Attempting fallback to DeepSeekService...');
+    final deepSeekResult = await _deepSeekService.analyzeIngredients(
+      profile: profile,
+      allergens: allergens,
+      ingredients: ingredients,
+    );
+    if (deepSeekResult != null) {
+      return deepSeekResult;
+    }
+
+    // Heuristic rule-based fallback when AI services are unreachable
+    return _buildHeuristicAnalysis(
+      profile: profile,
+      allergens: allergens,
+      ingredients: ingredients,
+    );
+  }
+
+  AnalysisResult _buildHeuristicAnalysis({
+    required UserProfile profile,
+    required List<Allergen> allergens,
+    required List<String> ingredients,
+  }) {
+    final List<FlaggedIngredient> flagged = [];
+    final List<IngredientBreakdown> breakdown = [];
+
+    for (final ing in ingredients) {
+      final normIng = ing.trim().toLowerCase();
+      SafetyLevel level = SafetyLevel.safe;
+      String? reason;
+      const function = 'สารบำรุง/ส่วนผสมเครื่องสำอาง (Cosmetic ingredient)';
+
+      // Check user allergen
+      final matchedAllergen = allergens.firstWhere(
+        (a) => a.ingredientName.trim().isNotEmpty &&
+            (normIng == a.ingredientName.trim().toLowerCase() ||
+                normIng.contains(a.ingredientName.trim().toLowerCase())),
+        orElse: () => const Allergen(id: '', userId: '', ingredientName: ''),
+      );
+
+      if (matchedAllergen.ingredientName.isNotEmpty) {
+        level = SafetyLevel.danger;
+        reason = 'ตรงกับสารก่อภูมิแพ้ที่คุณบันทึกไว้ (${matchedAllergen.ingredientName})';
+        flagged.add(FlaggedIngredient(
+          name: ing,
+          reason: reason,
+          riskLevel: SafetyLevel.danger,
+        ));
+      } else if (normIng.contains('parfum') || normIng.contains('fragrance')) {
+        if (profile.skinType == SkinType.sensitive ||
+            profile.avoidPreferences.any((p) => p.toLowerCase().contains('fragrance') || p.toLowerCase().contains('น้ำหอม'))) {
+          level = SafetyLevel.caution;
+          reason = 'น้ำหอม (Fragrance) อาจก่อให้เกิดการระคายเคืองในผิวแพ้ง่าย';
+          flagged.add(FlaggedIngredient(
+            name: ing,
+            reason: reason,
+            riskLevel: SafetyLevel.caution,
+          ));
+        }
+      } else if (normIng == 'alcohol' || normIng == 'alcohol denat.' || normIng == 'ethanol') {
+        if (profile.skinType == SkinType.dry || profile.skinType == SkinType.sensitive) {
+          level = SafetyLevel.caution;
+          reason = 'แอลกอฮอล์เข้มข้น อาจทำให้ผิวแห้งตึงหรือระคายเคือง';
+          flagged.add(FlaggedIngredient(
+            name: ing,
+            reason: reason,
+            riskLevel: SafetyLevel.caution,
+          ));
+        }
+      }
+
+      breakdown.add(IngredientBreakdown(
+        name: ing,
+        function: function,
+        riskLevel: level,
+      ));
+    }
+
+    final hasDanger = flagged.any((f) => f.riskLevel == SafetyLevel.danger);
+    final hasCaution = flagged.any((f) => f.riskLevel == SafetyLevel.caution);
+
+    SafetyLevel overall = SafetyLevel.safe;
+    String summaryTh;
+    String summaryEn;
+
+    if (hasDanger) {
+      overall = SafetyLevel.danger;
+      summaryTh = 'พบสารที่ตรงกับประวัติภูมิแพ้ของคุณ ควรหลีกเลี่ยงการใช้ผลิตภัณฑ์นี้';
+      summaryEn = 'Found ingredients matching your known allergens. Avoid using this product.';
+    } else if (hasCaution) {
+      overall = SafetyLevel.caution;
+      summaryTh = 'พบส่วนผสมที่ควรระวังสำหรับสภาพผิวของคุณ ควรทดสอบการแพ้ก่อนใช้';
+      summaryEn = 'Contains ingredients to use with caution for your skin profile. Patch test recommended.';
+    } else {
+      overall = SafetyLevel.safe;
+      summaryTh = 'ไม่พบสารก่อภูมิแพ้หรือสารเคมีอันตราย เหมาะสำหรับสภาพผิวของคุณ';
+      summaryEn = 'No known allergens or hazardous chemicals found. Suitable for your skin profile.';
+    }
+
+    return AnalysisResult(
+      overallSafety: overall,
+      summaryTh: summaryTh,
+      summaryEn: summaryEn,
+      flaggedIngredients: flagged,
+      ingredientBreakdown: breakdown,
+    );
   }
 
   /// Validates a custom API Key by running a lightweight test request.
   /// Returns null if the key is valid and has active quota,
   /// otherwise returns a user-friendly error message.
   Future<String?> validateApiKey(String apiKey) async {
-    try {
-      final model = GenerativeModel(
-        model: 'gemini-3.5-flash',
-        apiKey: apiKey.trim(),
-      );
-      final response = await model.generateContent([Content.text('Say OK')]);
-      if (response.text != null) {
-        return null; // Success!
-      } else {
-        return 'No response from model';
+    String? lastError;
+    for (final modelName in _candidateModels) {
+      try {
+        final model = GenerativeModel(
+          model: modelName,
+          apiKey: apiKey.trim(),
+        );
+        final response = await model.generateContent([Content.text('Say OK')]);
+        if (response.text != null) {
+          return null; // Success!
+        }
+      } on GenerativeAIException catch (e) {
+        final msg = e.message;
+        if (msg.contains('API_KEY_INVALID') || msg.contains('400')) {
+          return 'API Key ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (Invalid API Key)';
+        } else if (msg.contains('RESOURCE_EXHAUSTED') || msg.contains('429')) {
+          return 'โควตาเต็ม หรือสิทธิ์บัญชีฟรีเป็น 0 (Quota Exceeded / Limit 0)';
+        }
+        lastError = msg;
+      } catch (e) {
+        lastError = e.toString();
       }
-    } on GenerativeAIException catch (e) {
-      final msg = e.message;
-      if (msg.contains('API_KEY_INVALID') || msg.contains('400')) {
-        return 'API Key ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง (Invalid API Key)';
-      } else if (msg.contains('RESOURCE_EXHAUSTED') || msg.contains('429')) {
-        return 'โควตาเต็ม หรือสิทธิ์บัญชีฟรีเป็น 0 (Quota Exceeded / Limit 0)';
-      } else if (msg.contains('NOT_FOUND') || msg.contains('404')) {
-        return 'ไม่พบโมเดลนี้ในคีย์ของคุณ (Model Not Found)';
-      }
-      return msg;
-    } catch (e) {
-      return e.toString();
     }
+    return lastError ?? 'ไม่สามารถเชื่อมต่อกับโมเดล Gemini ด้วยคีย์นี้ได้';
   }
 
   /// Fetches the list of all available Gemini model display names for a given API Key.
@@ -175,20 +283,24 @@ Rules:
 - Values must be standard INCI names.
 ''';
 
-    try {
-      final model = await _getModel();
-      final response = await model.generateContent([Content.text(prompt)]);
-      final text = response.text ?? '{}';
-      final json = jsonDecode(text) as Map<String, dynamic>;
-      final Map<String, String> result = {};
-      json.forEach((key, value) {
-        if (value is String && value.isNotEmpty && key.trim().toLowerCase() != value.trim().toLowerCase()) {
-          result[key] = value;
-        }
-      });
-      return result;
-    } catch (_) {
-      return await _deepSeekService.checkIngredientTypos(unknownIngredients);
+    for (final modelName in _candidateModels) {
+      try {
+        final model = await _getModel(modelName: modelName);
+        final response = await model.generateContent([Content.text(prompt)]);
+        final text = response.text ?? '{}';
+        final json = jsonDecode(text) as Map<String, dynamic>;
+        final Map<String, String> result = {};
+        json.forEach((key, value) {
+          if (value is String && value.isNotEmpty && key.trim().toLowerCase() != value.trim().toLowerCase()) {
+            result[key] = value;
+          }
+        });
+        return result;
+      } catch (_) {
+        // Try next candidate model
+      }
     }
+
+    return await _deepSeekService.checkIngredientTypos(unknownIngredients);
   }
 }
