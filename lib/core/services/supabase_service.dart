@@ -57,7 +57,21 @@ class SupabaseService {
 
   Future<Product> upsertProduct(Product product) async {
     final data = product.toJson();
-    final res = await _client.from('products').upsert(data, onConflict: 'barcode').select().single();
+    if (product.id.isEmpty) {
+      data.remove('id');
+    }
+    if (product.barcode == null || product.barcode!.trim().isEmpty) {
+      data.remove('barcode');
+    }
+
+    dynamic res;
+    if (product.id.isNotEmpty) {
+      res = await _client.from('products').upsert(data, onConflict: 'id').select().single();
+    } else if (product.barcode != null && product.barcode!.trim().isNotEmpty) {
+      res = await _client.from('products').upsert(data, onConflict: 'barcode').select().single();
+    } else {
+      res = await _client.from('products').insert(data).select().single();
+    }
     return Product.fromJson(res);
   }
 
@@ -95,12 +109,15 @@ class SupabaseService {
     required String productId,
     required AnalysisResult result,
   }) async {
-    await _client.from('scan_history').insert({
+    final data = <String, dynamic>{
       'user_id': userId,
-      'product_id': productId,
       'safety_level': result.overallSafety.name,
       'ai_analysis': result.toJson(),
-    });
+    };
+    if (productId.isNotEmpty) {
+      data['product_id'] = productId;
+    }
+    await _client.from('scan_history').insert(data);
   }
 
   Future<List<Map<String, dynamic>>> getScanHistory(String userId) async {

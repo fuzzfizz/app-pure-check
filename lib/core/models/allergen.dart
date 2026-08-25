@@ -33,12 +33,17 @@ class Allergen {
         ),
       );
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'ingredient_name': ingredientName,
-        'reaction_symptoms': reactionSymptoms,
-        'severity': severity.name,
-        'source': source.name,
-      };
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{
+      'user_id': userId,
+      'ingredient_name': ingredientName,
+      'reaction_symptoms': reactionSymptoms,
+      'severity': severity.name,
+      'source': source.name,
+    };
+    if (id.isNotEmpty) {
+      map['id'] = id;
+    }
+    return map;
+  }
 }

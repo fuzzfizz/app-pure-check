@@ -100,22 +100,29 @@ class Product {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'barcode': barcode,
-        'name': name,
-        'brand': brand,
-        'ingredients': ingredients,
-        'raw_ingredients_text': rawIngredientsText,
-        'source': source.dbValue,
-        'verified_count': verifiedCount,
-        'image_url': imageUrl,
-        'is_verified': isVerified,
-        'status': status,
-        'submitted_by': submittedBy,
-        'confidence_score': confidenceScore,
-        'ai_flags': aiFlags,
-      };
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{
+      'name': name,
+      'brand': brand,
+      'ingredients': ingredients,
+      'raw_ingredients_text': rawIngredientsText,
+      'source': source.dbValue,
+      'verified_count': verifiedCount,
+      'image_url': imageUrl,
+      'is_verified': isVerified,
+      'status': status,
+      'submitted_by': submittedBy,
+      'confidence_score': confidenceScore,
+      'ai_flags': aiFlags,
+    };
+    if (id.isNotEmpty) {
+      map['id'] = id;
+    }
+    if (barcode != null && barcode!.isNotEmpty) {
+      map['barcode'] = barcode;
+    }
+    return map;
+  }
 
   Product copyWith({
     String? id,

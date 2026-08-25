@@ -67,6 +67,20 @@ void main() {
       expect(json['ai_flags'], ['suspicious_ingredients']);
     });
 
+    test('toJson omits empty id and empty barcode to prevent postgres uuid syntax error', () {
+      const product = Product(
+        id: '',
+        name: 'OpenBeautyProduct',
+        ingredients: ['Water'],
+      );
+
+      final json = product.toJson();
+
+      expect(json.containsKey('id'), isFalse);
+      expect(json.containsKey('barcode'), isFalse);
+      expect(json['name'], 'OpenBeautyProduct');
+    });
+
     test('copyWith correctly updates moderation fields', () {
       const product = Product(
         id: 'prod-004',
