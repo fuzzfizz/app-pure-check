@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/inci_core_dataset.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/product.dart';
 import '../../../core/services/inci_search_service.dart';
@@ -258,18 +259,27 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
                 labelText: l10n.allIngredientsSeparated,
                 hintText: l10n.ingredientsPlaceholder,
                 alignLabelWithHint: true,
+                helperText: _ingredientsCtrl.text.trim().isNotEmpty
+                    ? 'ตรวจพบ ${_ingredientsCtrl.text.split(RegExp(r'[,;]')).where((s) => s.trim().isNotEmpty).length} ส่วนผสม'
+                    : 'คั่นแต่ละส่วนผสมด้วยเครื่องหมายจุลภาค (,)',
+                helperStyle: TextStyle(
+                  color: _ingredientsCtrl.text.trim().isNotEmpty
+                      ? AppColors.primary
+                      : Colors.grey.shade600,
+                  fontSize: 12,
+                ),
               ),
             ),
             if (_suggestions.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(20),
+                      color: Colors.black.withAlpha(15),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -279,24 +289,36 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Text(
-                        'INCI Suggestions:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                    Row(
+                      children: const [
+                        Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
+                        SizedBox(width: 6),
+                        Text(
+                          'คำแนะนำส่วนผสมมาตรฐาน (INCI):',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
+                    const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
                       runSpacing: 4,
                       children: _suggestions.map((suggestion) {
+                        final inciInfo = InciCoreDataset.find(suggestion);
+                        final labelText = inciInfo != null
+                            ? '$suggestion (${inciInfo.category})'
+                            : suggestion;
+
                         return ActionChip(
-                          avatar: const Icon(Icons.add, size: 16, color: AppColors.primary),
-                          label: Text(suggestion),
+                          avatar: const Icon(Icons.add_circle_outline, size: 16, color: AppColors.primary),
+                          label: Text(
+                            labelText,
+                            style: const TextStyle(fontSize: 12),
+                          ),
                           onPressed: () => _selectSuggestion(suggestion),
                           backgroundColor: AppColors.primary.withAlpha(15),
                           side: BorderSide(color: AppColors.primary.withAlpha(50)),

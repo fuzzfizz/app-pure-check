@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_check/core/models/product.dart';
 import 'package:pure_check/core/services/admin_moderation_service.dart';
 import 'package:pure_check/core/services/inci_search_service.dart';
+import 'package:pure_check/core/services/supabase_service.dart';
 
 class FakeInciSearchService implements InciSearchService {
   final List<String> unrecognizedReturn;
@@ -37,6 +38,30 @@ void main() {
       expect(lowEval.isHighConfidence, isFalse);
       expect(lowEval.needsInspection, isFalse);
       expect(lowEval.isLowConfidence, isTrue);
+    });
+
+    test('reasonSummaries generates clear explanation text for deductions', () {
+      const eval100 = ModerationEvaluation(
+        confidenceScore: 100,
+        flags: [],
+        deductions: {},
+      );
+      expect(eval100.reasonSummaries, contains('ข้อมูลสมบูรณ์และผ่านเกณฑ์ความปลอดภัยทั้งหมด (100 คะแนนเต็ม)'));
+
+      const evalWithDeductions = ModerationEvaluation(
+        confidenceScore: 45,
+        flags: ['short_name', 'missing_brand', 'low_inci_match'],
+        deductions: {
+          'short_name': -30,
+          'missing_brand': -15,
+          'low_inci_match': -40,
+        },
+        inciMatchRate: 0.25,
+      );
+      expect(evalWithDeductions.reasonSummaries.length, equals(3));
+      expect(evalWithDeductions.reasonSummaries.first, contains('ชื่อผลิตภัณฑ์สั้นเกินไป'));
+      expect(evalWithDeductions.reasonSummaries[1], contains('ไม่ระบุชื่อแบรนด์'));
+      expect(evalWithDeductions.reasonSummaries[2], contains('ส่วนผสมตรงกับฐานข้อมูล INCI'));
     });
   });
 
@@ -131,6 +156,50 @@ void main() {
 
       expect(eval.isLowConfidence, isTrue);
       expect(eval.confidenceScore, lessThan(50));
+    });
+
+    test('evaluateProduct with InciSearchService evaluates CeraVe Hydrating Cleanser as 100% Green', () async {
+      final realInciService = InciSearchService(SupabaseService());
+      final moderationService = AdminModerationService(realInciService);
+
+      const cerave = Product(
+        id: 'p-cerave',
+        name: 'Hydrating Cleanser',
+        brand: 'CeraVe',
+        ingredients: [
+          'Water',
+          'Glycerin',
+          'Cetearyl Alcohol',
+          'Peg-40 Stearate',
+          'Stearyl Alcohol',
+          'Potassium Phosphate',
+          'Ceramide Np',
+          'Ceramide Ap',
+          'Ceramide Eop',
+          'Carbomer',
+          'Glyceryl Stearate',
+          'Behentrimonium Methosulfate',
+          'Sodium Lauroyl Lactylate',
+          'Sodium Hyaluronate',
+          'Cholesterol',
+          'Phenoxyethanol',
+          'Disodium Edta',
+          'Dipotassium Phosphate',
+          'Tocopherol',
+          'Phytosphingosine',
+          'Xanthan Gum',
+          'Ethylhexylglycerin',
+        ],
+        status: 'pending',
+      );
+
+      final eval = await moderationService.evaluateProduct(cerave);
+
+      expect(eval.confidenceScore, equals(100));
+      expect(eval.isHighConfidence, isTrue);
+      expect(eval.unrecognizedIngredients, isEmpty);
+      expect(eval.flags, isEmpty);
+      expect(eval.reasonSummaries, contains('ข้อมูลสมบูรณ์และผ่านเกณฑ์ความปลอดภัยทั้งหมด (100 คะแนนเต็ม)'));
     });
 
     test('adminModerationServiceProvider provides AdminModerationService instance', () {

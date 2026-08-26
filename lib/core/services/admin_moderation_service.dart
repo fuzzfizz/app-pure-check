@@ -25,6 +25,36 @@ class ModerationEvaluation {
   bool get isHighConfidence => confidenceScore >= 80;
   bool get needsInspection => confidenceScore >= 50 && confidenceScore < 80;
   bool get isLowConfidence => confidenceScore < 50;
+
+  List<String> get reasonSummaries {
+    final list = <String>[];
+    if (deductions.containsKey('short_name')) {
+      list.add('ชื่อผลิตภัณฑ์สั้นเกินไป (< 3 ตัวอักษร) [หัก 30 คะแนน]');
+    }
+    if (deductions.containsKey('missing_brand')) {
+      list.add('ไม่ระบุชื่อแบรนด์ [หัก 15 คะแนน]');
+    }
+    if (deductions.containsKey('suspected_spam')) {
+      list.add('ตรวจพบรูปแบบสแปมหรือ URL [หัก 40 คะแนน]');
+    }
+    if (deductions.containsKey('no_ingredients')) {
+      list.add('ไม่มีข้อมูลส่วนผสม [หัก 20 คะแนน]');
+    }
+    if (deductions.containsKey('low_inci_match')) {
+      final percent = (inciMatchRate * 100).toStringAsFixed(0);
+      list.add('ส่วนผสมตรงกับฐานข้อมูล INCI เพียง $percent% (< 50%) [หัก 40 คะแนน]');
+    } else if (deductions.containsKey('partial_inci_match')) {
+      final percent = (inciMatchRate * 100).toStringAsFixed(0);
+      list.add('ส่วนผสมตรงกับฐานข้อมูล INCI $percent% (50-79%) [หัก 20 คะแนน]');
+    } else if (deductions.containsKey('unrecognized_ingredients')) {
+      list.add('มีส่วนผสมบางตัวไม่พบในฐานข้อมูล INCI [หัก 10 คะแนน]');
+    }
+
+    if (list.isEmpty && confidenceScore == 100) {
+      list.add('ข้อมูลสมบูรณ์และผ่านเกณฑ์ความปลอดภัยทั้งหมด (100 คะแนนเต็ม)');
+    }
+    return list;
+  }
 }
 
 class AdminModerationService {

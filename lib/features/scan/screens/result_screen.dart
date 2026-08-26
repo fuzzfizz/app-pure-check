@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/data/inci_core_dataset.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/analysis_result.dart';
 import '../../../core/models/product.dart';
@@ -201,12 +202,32 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Ingredients Safety Summary Stats Bar
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatPill('ปลอดภัย', safeList.length, AppColors.safe, Icons.check_circle_outline),
+                        Container(width: 1, height: 24, color: Colors.grey.shade300),
+                        _buildStatPill('ควรระวัง', cautionList.length, AppColors.caution, Icons.warning_amber_rounded),
+                        Container(width: 1, height: 24, color: Colors.grey.shade300),
+                        _buildStatPill('เสี่ยงสูง', dangerList.length, AppColors.danger, Icons.error_outline),
+                      ],
+                    ),
+                  ),
+
                   // Flagged Allergens Section (Only if danger/caution)
                   if (analysis.flaggedIngredients.isNotEmpty) ...[
                     Text(
@@ -402,6 +423,37 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     );
   }
 
+  Widget _buildStatPill(String label, int count, Color color, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$count รายการ',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: color,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildCategorySection(
     String title,
     List<IngredientBreakdown> list,
@@ -427,6 +479,10 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
         const SizedBox(height: 12),
         ...list.map((ing) {
           final isExpanded = _expandedIngredient == ing.name;
+          final inciInfo = InciCoreDataset.find(ing.name);
+          final functionText = inciInfo?.category ?? ing.function;
+          final descTh = inciInfo?.descriptionTh;
+
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: InkWell(
@@ -445,24 +501,51 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(
-                            ing.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                ing.name,
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              if (functionText != null && functionText.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  functionText,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
+                        const SizedBox(width: 8),
                         SafetyBadge(level: ing.riskLevel),
                       ],
                     ),
-                    if (isExpanded && ing.function != null) ...[
+                    if (isExpanded) ...[
                       const SizedBox(height: 8),
                       const Divider(),
                       const SizedBox(height: 4),
-                      Text(
-                        l10n.functionProperty(ing.function!),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                      ),
+                      if (descTh != null && descTh.isNotEmpty) ...[
+                        Text(
+                          'หน้าที่ & สรรพคุณ: $descTh',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontSize: 13,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                      ] else if (ing.function != null) ...[
+                        Text(
+                          l10n.functionProperty(ing.function!),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                        ),
+                      ],
                     ],
                   ],
                 ),

@@ -97,11 +97,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump();
 
-    expect(find.text('INCI Suggestions:'), findsOneWidget);
-    expect(find.text('Niacinamide'), findsOneWidget);
+    expect(find.text('คำแนะนำส่วนผสมมาตรฐาน (INCI):'), findsOneWidget);
+    final suggestionChip = find.descendant(
+      of: find.byType(ActionChip),
+      matching: find.textContaining('Niacinamide'),
+    );
+    expect(suggestionChip, findsOneWidget);
 
-    await tester.ensureVisible(find.text('Niacinamide'));
-    await tester.tap(find.text('Niacinamide'), warnIfMissed: false);
+    await tester.ensureVisible(suggestionChip);
+    await tester.tap(suggestionChip, warnIfMissed: false);
     await tester.pump();
 
     final TextField textField = tester.widget(textFields.at(2));

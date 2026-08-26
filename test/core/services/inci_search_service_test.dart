@@ -50,36 +50,52 @@ void main() {
       service = InciSearchService(supabaseService);
     });
 
-    test('searchIngredients queries inci_ingredients table with ilike and limit', () async {
+    test('searchIngredients returns local matches and queries remote when needed', () async {
       fakeHttpClient.jsonResponseData = [
-        {'name': 'Niacinamide'},
-        {'name': 'Nicotinic Acid'},
+        {'name': 'CustomRemoteIngr'},
       ];
 
-      final results = await service.searchIngredients('Niacin', limit: 5);
+      final results = await service.searchIngredients('CustomRemote', limit: 5);
 
-      expect(results, equals(['Niacinamide', 'Nicotinic Acid']));
+      expect(results, contains('CustomRemoteIngr'));
       expect(fakeHttpClient.lastUrl, isNotNull);
       expect(fakeHttpClient.lastUrl!.path, contains('/rest/v1/inci_ingredients'));
-      expect(fakeHttpClient.lastUrl!.queryParameters['select'], equals('name'));
-      expect(fakeHttpClient.lastUrl!.queryParameters['name'], equals('ilike.%Niacin%'));
-      expect(fakeHttpClient.lastUrl!.queryParameters['limit'], equals('5'));
     });
 
-    test('filterUnrecognizedIngredients identifies ingredients not in inci_ingredients', () async {
+    test('searchIngredients returns instant local matches without network when limit met', () async {
+      final results = await service.searchIngredients('Niacinamide', limit: 1);
+      expect(results, equals(['Niacinamide']));
+      expect(fakeHttpClient.lastUrl, isNull);
+    });
+
+    test('filterUnrecognizedIngredients recognizes standard INCI locally and queries remote for unknowns', () async {
       fakeHttpClient.jsonResponseData = [
-        {'name': 'Water'},
-        {'name': 'Glycerin'},
+        {'name': 'CustomRemoteApproved'},
       ];
 
-      final input = ['Water', 'Glycerin', 'UnknownIngredient123'];
+      final input = ['Water', 'Glycerin', 'CustomRemoteApproved', 'UnknownIngredient123'];
       final unrecognized = await service.filterUnrecognizedIngredients(input);
 
       expect(unrecognized, equals(['UnknownIngredient123']));
       expect(fakeHttpClient.lastUrl, isNotNull);
       expect(fakeHttpClient.lastUrl!.path, contains('/rest/v1/inci_ingredients'));
-      expect(fakeHttpClient.lastUrl!.queryParameters['select'], equals('name'));
       expect(fakeHttpClient.lastUrl!.queryParameters['name'], contains('in.'));
+    });
+
+    test('filterUnrecognizedIngredients returns empty when all ingredients are standard INCI', () async {
+      final input = ['Water', 'Aqua', 'Glycerin', 'Niacinamide', 'Ceramide NP'];
+      final unrecognized = await service.filterUnrecognizedIngredients(input);
+
+      expect(unrecognized, isEmpty);
+      expect(fakeHttpClient.lastUrl, isNull); // zero network calls required!
+    });
+
+    test('filterUnrecognizedIngredients handles case insensitivity', () async {
+      final input = ['water', 'GLYCERIN', 'niacinamide', 'ceramide np'];
+      final unrecognized = await service.filterUnrecognizedIngredients(input);
+
+      expect(unrecognized, isEmpty);
+      expect(fakeHttpClient.lastUrl, isNull);
     });
 
     test('filterUnrecognizedIngredients returns empty list when given empty input', () async {

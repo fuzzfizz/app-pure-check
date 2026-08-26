@@ -499,24 +499,66 @@ class _AdminReviewScreenState extends ConsumerState<AdminReviewScreen> {
                   ),
                 ],
               ),
-              if (eval != null && eval.flags.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: eval.flags
-                      .map(
-                        (flag) => Chip(
-                          label: Text(
-                            flag,
-                            style: const TextStyle(fontSize: 11),
+              if (eval != null && status == EvaluationStatus.done) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withAlpha(15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: badgeColor.withAlpha(50)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(icon, size: 15, color: badgeColor),
+                          const SizedBox(width: 6),
+                          Text(
+                            'สรุปเหตุผลคะแนน (${eval.confidenceScore}%):',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: badgeColor,
+                            ),
                           ),
-                          backgroundColor: Colors.amber.shade100,
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ...eval.reasonSummaries.map(
+                        (reason) => Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '• ',
+                                style: TextStyle(
+                                  color: badgeColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  reason,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Colors.black87,
+                                        fontSize: 11.5,
+                                        height: 1.3,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      )
-                      .toList(),
+                      ),
+                    ],
+                  ),
                 ),
               ],
               const SizedBox(height: 8),
@@ -767,6 +809,47 @@ class _AdminReviewScreenState extends ConsumerState<AdminReviewScreen> {
                                 const SizedBox(height: 12),
                                 const Divider(height: 1),
                                 const SizedBox(height: 12),
+                                Text(
+                                  'สรุปเหตุผลการให้คะแนน (${eval.confidenceScore}%):',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                                const SizedBox(height: 6),
+                                ...eval.reasonSummaries.map(
+                                  (reason) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(
+                                          eval.isHighConfidence
+                                              ? Icons.check_circle
+                                              : Icons.info_outline,
+                                          size: 16,
+                                          color: badgeColor,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            reason,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              height: 1.3,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                const Divider(height: 1),
+                                const SizedBox(height: 10),
                                 Text(
                                   'AI Evaluation Criteria Breakdown:',
                                   style: Theme.of(context)
