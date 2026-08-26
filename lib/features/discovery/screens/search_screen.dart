@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/inci_core_dataset.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/search_provider.dart';
@@ -164,7 +165,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
     // Generate ingredients from matching product ingredients or show match query
     final List<String> list = [];
     if (state.query.isNotEmpty) {
-      list.add(state.query.trim()); // Always let them search raw query as ingredient
+      final clean = state.query.trim();
+      final inciMatches = InciCoreDataset.search(clean, limit: 10);
+      for (final match in inciMatches) {
+        if (!list.contains(match)) list.add(match);
+      }
+      if (!list.contains(clean)) {
+        list.add(clean); // Always let them search raw query as ingredient
+      }
     }
 
     for (final prod in state.results) {

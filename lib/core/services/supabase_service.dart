@@ -14,7 +14,11 @@ class SupabaseService {
     try {
       return Supabase.instance.client;
     } catch (_) {
-      return SupabaseClient('https://dummy.supabase.co', 'dummy_anon_key');
+      return SupabaseClient(
+        'https://dummy.supabase.co',
+        'dummy_anon_key',
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+      );
     }
   }
 
@@ -76,10 +80,13 @@ class SupabaseService {
   }
 
   Future<List<Product>> searchProducts(String query) async {
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) return [];
+
     final res = await _client
         .from('products')
         .select()
-        .ilike('name', '%$query%')
+        .or('name.ilike.%$cleanQuery%,brand.ilike.%$cleanQuery%')
         .limit(20);
     return (res as List).map((e) => Product.fromJson(e)).toList();
   }
