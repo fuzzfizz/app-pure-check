@@ -667,6 +667,10 @@ class _AdminReviewScreenState extends ConsumerState<AdminReviewScreen> {
             .map((e) => e.toLowerCase().trim())
             .toSet() ??
         {};
+    final newlyVerifiedSet = eval?.newlyVerifiedIngredients
+            .map((e) => e.toLowerCase().trim())
+            .toSet() ??
+        {};
 
     showModalBottomSheet(
       context: context,
@@ -988,6 +992,31 @@ class _AdminReviewScreenState extends ConsumerState<AdminReviewScreen> {
                             children: product.ingredients.map((ing) {
                               final isUnrecognized = unrecognizedSet
                                   .contains(ing.toLowerCase().trim());
+                              final isNewlyVerified = newlyVerifiedSet
+                                  .contains(ing.toLowerCase().trim());
+
+                              if (isNewlyVerified) {
+                                return Chip(
+                                  avatar: Icon(
+                                    Icons.verified_outlined,
+                                    size: 16,
+                                    color: Colors.blue.shade800,
+                                  ),
+                                  label: Text(
+                                    '$ing (CosIng)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.blue.shade900,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  backgroundColor: Colors.blue.shade50,
+                                  side: BorderSide(
+                                    color: Colors.blue.shade200,
+                                  ),
+                                );
+                              }
+
                               return Chip(
                                 avatar: Icon(
                                   isUnrecognized

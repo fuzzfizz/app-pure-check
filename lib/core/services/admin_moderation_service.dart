@@ -1,16 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
 import 'inci_search_service.dart';
+import 'cosing_verification_service.dart';
 
 final adminModerationServiceProvider = Provider<AdminModerationService>((ref) {
   final inciSearchService = ref.watch(inciSearchServiceProvider);
-  return AdminModerationService(inciSearchService);
+  final cosIngService = ref.watch(cosIngVerificationServiceProvider);
+  return AdminModerationService(inciSearchService, cosIngService);
 });
 
 class ModerationEvaluation {
   final int confidenceScore;
   final List<String> flags;
   final List<String> unrecognizedIngredients;
+  final List<String> newlyVerifiedIngredients;
   final double inciMatchRate;
   final Map<String, int> deductions;
 
@@ -18,6 +21,7 @@ class ModerationEvaluation {
     required this.confidenceScore,
     required this.flags,
     this.unrecognizedIngredients = const [],
+    this.newlyVerifiedIngredients = const [],
     this.inciMatchRate = 1.0,
     this.deductions = const {},
   });
@@ -28,6 +32,9 @@ class ModerationEvaluation {
 
   List<String> get reasonSummaries {
     final list = <String>[];
+    if (newlyVerifiedIngredients.isNotEmpty) {
+      list.add('สารใหม่ได้รับการตรวจสอบรับรองตาม CosIng และบันทึกลง Cloud แล้ว (${newlyVerifiedIngredients.length} รายการ)');
+    }
     if (deductions.containsKey('short_name')) {
       list.add('ชื่อผลิตภัณฑ์สั้นเกินไป (< 3 ตัวอักษร) [หัก 30 คะแนน]');
     }
@@ -59,8 +66,12 @@ class ModerationEvaluation {
 
 class AdminModerationService {
   final InciSearchService _inciSearchService;
+  final CosIngVerificationService? _cosIngVerificationService;
 
-  AdminModerationService(this._inciSearchService);
+  AdminModerationService(
+    this._inciSearchService, [
+    this._cosIngVerificationService,
+  ]);
 
   Future<ModerationEvaluation> evaluateProduct(Product product) async {
     int score = 100;
@@ -91,6 +102,7 @@ class AdminModerationService {
     }
 
     // 4. INCI ingredient recognition rate check
+    final newlyVerified = <String>[];
     if (product.ingredients.isEmpty) {
       flags.add('no_ingredients');
       score -= 20;
@@ -98,6 +110,22 @@ class AdminModerationService {
       inciRate = 0.0;
     } else {
       unrecognized = await _inciSearchService.filterUnrecognizedIngredients(product.ingredients);
+
+      // Verify unrecognized with CosIng if service is available
+      if (unrecognized.isNotEmpty && _cosIngVerificationService != null) {
+        final verifiedList = await _cosIngVerificationService.verifyAndSyncBatch(
+          unrecognized,
+          autoSyncToSupabase: true,
+        );
+        if (verifiedList.isNotEmpty) {
+          final verifiedSet = verifiedList.map((e) => e.name.trim().toLowerCase()).toSet();
+          newlyVerified.addAll(verifiedList.map((e) => e.name));
+          unrecognized = unrecognized
+              .where((e) => !verifiedSet.contains(e.trim().toLowerCase()))
+              .toList();
+        }
+      }
+
       final total = product.ingredients.length;
       final recognizedCount = total - unrecognized.length;
       inciRate = total > 0 ? recognizedCount / total : 0.0;
@@ -124,6 +152,7 @@ class AdminModerationService {
       confidenceScore: finalScore,
       flags: flags,
       unrecognizedIngredients: unrecognized,
+      newlyVerifiedIngredients: newlyVerified,
       inciMatchRate: inciRate,
       deductions: deductions,
     );

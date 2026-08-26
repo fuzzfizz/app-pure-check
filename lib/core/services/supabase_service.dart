@@ -129,4 +129,32 @@ class SupabaseService {
         .limit(50);
     return List<Map<String, dynamic>>.from(res);
   }
+
+  // INCI Ingredients
+  Future<void> addInciIngredient({
+    required String name,
+    String? category,
+    String? descriptionTh,
+  }) async {
+    final data = <String, dynamic>{
+      'name': name,
+    };
+    if (category != null && category.isNotEmpty) {
+      data['category'] = category;
+    }
+    if (descriptionTh != null && descriptionTh.isNotEmpty) {
+      data['description_th'] = descriptionTh;
+    }
+
+    try {
+      await _client.from('inci_ingredients').upsert(data, onConflict: 'name');
+    } catch (_) {
+      // If table doesn't have category/description_th columns yet, fallback to inserting name
+      try {
+        await _client.from('inci_ingredients').upsert({'name': name}, onConflict: 'name');
+      } catch (_) {
+        // Catch silently if RLS or network issue
+      }
+    }
+  }
 }

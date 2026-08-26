@@ -5,6 +5,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../models/allergen.dart';
+import '../models/cosing_ingredient.dart';
 import '../models/user_profile.dart';
 import '../models/analysis_result.dart';
 import 'deepseek_service.dart';
@@ -302,5 +303,56 @@ Rules:
     }
 
     return await _deepSeekService.checkIngredientTypos(unknownIngredients);
+  }
+
+  /// Validates whether an unknown ingredient name matches standard EU CosIng / US CIR / INCI nomenclature,
+  /// categorizes its cosmetic functional category, and provides a Thai description.
+  Future<CosIngIngredient?> verifyCosIngIngredient(String rawName) async {
+    final term = rawName.trim();
+    if (term.isEmpty) return null;
+
+    final prompt = '''
+You are an expert cosmetic chemist and regulatory toxicologist specializing in EU CosIng and INCI nomenclature.
+Analyze the following ingredient candidate: "$term"
+
+Determine:
+1. Is this a valid, authorized cosmetic ingredient according to EU CosIng / CIR / INCI standards? (boolean)
+2. What is its standard cosmetic functional category? (e.g. Humectant, Emollient, Active / Vitamin, Surfactant, Preservative, Botanical Extract, UV Filter, etc.)
+3. Provide a concise Thai explanation (1-2 sentences) of its cosmetic function and benefits.
+4. Confidence score from 0 to 100.
+
+Return ONLY valid JSON in this exact format:
+{
+  "name": "$term",
+  "is_valid_inci": true,
+  "cosing_id": "optional cosing reference number or null",
+  "category": "e.g. Active / Vitamin C",
+  "description_th": "คำอธิบายภาษาไทยสั้นๆ 1-2 ประโยค",
+  "confidence_score": 95
+}
+
+If the term is nonsense, spam, advertising text (e.g. "100% organic", "best cream"), or completely invalid, return:
+{
+  "name": "$term",
+  "is_valid_inci": false,
+  "category": "Invalid",
+  "description_th": "ไม่พบในฐานข้อมูลสารเครื่องสำอางสากล",
+  "confidence_score": 0
+}
+''';
+
+    for (final modelName in _candidateModels) {
+      try {
+        final model = await _getModel(modelName: modelName);
+        final response = await model.generateContent([Content.text(prompt)]);
+        final text = response.text ?? '{}';
+        final json = jsonDecode(text) as Map<String, dynamic>;
+        return CosIngIngredient.fromJson(json);
+      } catch (_) {
+        // Try next candidate
+      }
+    }
+
+    return null;
   }
 }

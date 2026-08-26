@@ -1,9 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_check/core/models/cosing_ingredient.dart';
 import 'package:pure_check/core/models/product.dart';
 import 'package:pure_check/core/services/admin_moderation_service.dart';
+import 'package:pure_check/core/services/cosing_verification_service.dart';
+import 'package:pure_check/core/services/gemini_service.dart';
 import 'package:pure_check/core/services/inci_search_service.dart';
 import 'package:pure_check/core/services/supabase_service.dart';
+
+class FakeCosIngVerificationService extends CosIngVerificationService {
+  final List<CosIngIngredient> Function(List<String> unknowns)? onVerifyBatch;
+
+  FakeCosIngVerificationService({this.onVerifyBatch})
+      : super(
+          geminiService: GeminiService(),
+          supabaseService: SupabaseService(),
+        );
+
+  @override
+  Future<List<CosIngIngredient>> verifyAndSyncBatch(
+    List<String> unknownIngredients, {
+    bool autoSyncToSupabase = true,
+  }) async {
+    if (onVerifyBatch != null) return onVerifyBatch!(unknownIngredients);
+    return [];
+  }
+}
 
 class FakeInciSearchService implements InciSearchService {
   final List<String> unrecognizedReturn;
@@ -200,6 +222,38 @@ void main() {
       expect(eval.unrecognizedIngredients, isEmpty);
       expect(eval.flags, isEmpty);
       expect(eval.reasonSummaries, contains('ข้อมูลสมบูรณ์และผ่านเกณฑ์ความปลอดภัยทั้งหมด (100 คะแนนเต็ม)'));
+    });
+
+    test('evaluateProduct verifies unrecognized ingredient via CosIng and avoids deduction', () async {
+      final fakeInci = FakeInciSearchService(unrecognizedReturn: ['RareBotanicalExtract']);
+      final fakeCosIng = FakeCosIngVerificationService(
+        onVerifyBatch: (unknowns) => [
+          const CosIngIngredient(
+            name: 'RareBotanicalExtract',
+            isValidInci: true,
+            category: 'Botanical Extract',
+            descriptionTh: 'สารสกัดธรรมชาติผ่านการรับรอง',
+            confidenceScore: 95,
+          ),
+        ],
+      );
+
+      final moderationService = AdminModerationService(fakeInci, fakeCosIng);
+
+      const product = Product(
+        id: 'p-rare',
+        name: 'Botanical Serum',
+        brand: 'Nature Care',
+        ingredients: ['Water', 'Glycerin', 'RareBotanicalExtract'],
+      );
+
+      final eval = await moderationService.evaluateProduct(product);
+
+      expect(eval.confidenceScore, equals(100));
+      expect(eval.isHighConfidence, isTrue);
+      expect(eval.unrecognizedIngredients, isEmpty);
+      expect(eval.newlyVerifiedIngredients, contains('RareBotanicalExtract'));
+      expect(eval.reasonSummaries.first, contains('สารใหม่ได้รับการตรวจสอบรับรองตาม CosIng'));
     });
 
     test('adminModerationServiceProvider provides AdminModerationService instance', () {
