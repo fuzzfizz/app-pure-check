@@ -98,7 +98,7 @@ void main() {
     );
   }
 
-  testWidgets('renders pending products with traffic light badges', (WidgetTester tester) async {
+  testWidgets('renders pending products initially with Pending AI badge and Start AI Analysis button', (WidgetTester tester) async {
     await tester.pumpWidget(buildWidget());
     await tester.pumpAndSettle();
 
@@ -106,23 +106,37 @@ void main() {
     expect(find.text('Medium Lotion'), findsOneWidget);
     expect(find.text('X'), findsOneWidget);
 
-    // Traffic light badge check
-    expect(find.text('Green'), findsOneWidget);
-    expect(find.text('Yellow'), findsOneWidget);
-    expect(find.text('Red'), findsOneWidget);
+    // Initial state: all pending AI
+    expect(find.text('Pending AI'), findsNWidgets(3));
+    expect(find.text('Start AI Analysis (3)'), findsOneWidget);
+    expect(find.text('Safe (>= 80%): 0'), findsOneWidget);
   });
 
-  testWidgets('1-Click Auto-Approve Safe Batch approves high confidence products', (WidgetTester tester) async {
+  testWidgets('Start AI Analysis button sequentially evaluates products and enables Auto-Approve', (WidgetTester tester) async {
     await tester.pumpWidget(buildWidget());
     await tester.pumpAndSettle();
 
-    final batchButton = find.text('1-Click Auto-Approve Safe Batch');
+    final startAiButton = find.text('Start AI Analysis (3)');
+    expect(startAiButton, findsOneWidget);
+
+    await tester.tap(startAiButton);
+    await tester.pumpAndSettle();
+
+    // After evaluation completes:
+    expect(find.text('Green'), findsOneWidget);
+    expect(find.text('(100%)'), findsOneWidget);
+    expect(find.text('Yellow'), findsOneWidget);
+    expect(find.text('Red'), findsOneWidget);
+    expect(find.text('Safe (>= 80%): 1'), findsOneWidget);
+    expect(find.text('All Analyzed'), findsOneWidget);
+
+    // Now test 1-Click Auto-Approve Safe Batch
+    final batchButton = find.text('Auto-Approve Safe');
     expect(batchButton, findsOneWidget);
 
     await tester.tap(batchButton);
     await tester.pumpAndSettle();
 
-    // High confidence product should be approved and removed from pending list
     expect(fakeSupabase.updatedStatuses.length, equals(1));
     expect(fakeSupabase.updatedStatuses.first['productId'], equals('p-high'));
     expect(fakeSupabase.updatedStatuses.first['status'], equals('approved'));
@@ -131,6 +145,23 @@ void main() {
     expect(find.text('Safe Cleanser'), findsNothing);
     expect(find.text('Medium Lotion'), findsOneWidget);
     expect(find.text('X'), findsOneWidget);
+  });
+
+  testWidgets('Analyze button on individual card evaluates only that product', (WidgetTester tester) async {
+    await tester.pumpWidget(buildWidget());
+    await tester.pumpAndSettle();
+
+    final analyzeButtons = find.widgetWithText(OutlinedButton, 'Analyze');
+    expect(analyzeButtons, findsNWidgets(3));
+
+    // Tap first analyze button (Safe Cleanser)
+    await tester.tap(analyzeButtons.first);
+    await tester.pumpAndSettle();
+
+    // First product is now Green (100%), other two remain Pending AI
+    expect(find.text('Green'), findsOneWidget);
+    expect(find.text('Pending AI'), findsNWidgets(2));
+    expect(find.text('Start AI Analysis (2)'), findsOneWidget);
   });
 
   testWidgets('Approve action button approves individual product', (WidgetTester tester) async {
@@ -162,4 +193,90 @@ void main() {
     expect(fakeSupabase.updatedStatuses.last['status'], equals('rejected'));
     expect(fakeSupabase.updatedStatuses.last['isVerified'], isFalse);
   });
+
+  testWidgets('tapping View Details for analyzed product opens detail modal with full breakdown and allows approve', (WidgetTester tester) async {
+    await tester.pumpWidget(buildWidget());
+    await tester.pumpAndSettle();
+
+    // First run AI analysis
+    await tester.tap(find.text('Start AI Analysis (3)'));
+    await tester.pumpAndSettle();
+
+    final viewDetailsButtons = find.widgetWithText(TextButton, 'View Details');
+    expect(viewDetailsButtons, findsAtLeastNWidgets(1));
+
+    // Tap first view details button (Safe Cleanser)
+    await tester.tap(viewDetailsButtons.first);
+    await tester.pumpAndSettle();
+
+    // Verify modal content
+    expect(find.text('Product Details & AI Moderation'), findsOneWidget);
+    expect(find.text('AI Evaluation Criteria Breakdown:'), findsOneWidget);
+    expect(find.text('Product Name Length'), findsOneWidget);
+    expect(find.text('Brand Information'), findsOneWidget);
+    expect(find.text('Spam Detection'), findsOneWidget);
+    expect(find.text('INCI Recognition Rate'), findsOneWidget);
+
+    // Tap Approve inside modal
+    final modalApproveButton = find.descendant(
+      of: find.byType(DraggableScrollableSheet),
+      matching: find.widgetWithText(ElevatedButton, 'Approve'),
+    );
+    expect(modalApproveButton, findsOneWidget);
+
+    await tester.tap(modalApproveButton);
+    await tester.pumpAndSettle();
+
+    // Verify product is approved and modal is dismissed
+    expect(find.text('Product Details & AI Moderation'), findsNothing);
+    expect(fakeSupabase.updatedStatuses.last['productId'], equals('p-high'));
+    expect(fakeSupabase.updatedStatuses.last['status'], equals('approved'));
+  });
+
+  testWidgets('tapping View Details for medium confidence product shows unrecognized ingredients and allows reject', (WidgetTester tester) async {
+    await tester.pumpWidget(buildWidget());
+    await tester.pumpAndSettle();
+
+    // First run AI analysis
+    await tester.tap(find.text('Start AI Analysis (3)'));
+    await tester.pumpAndSettle();
+
+    // Find card for Medium Lotion
+    final lotionCard = find.text('Medium Lotion');
+    expect(lotionCard, findsOneWidget);
+
+    await tester.tap(lotionCard);
+    await tester.pumpAndSettle();
+
+    // Verify modal opened
+    expect(find.text('Product Details & AI Moderation'), findsOneWidget);
+    final modalScrollable = find.descendant(
+      of: find.byType(DraggableScrollableSheet),
+      matching: find.byType(Scrollable),
+    );
+    final unrecognizedFinder = find.text('1 unrecognized');
+    await tester.scrollUntilVisible(unrecognizedFinder, 100, scrollable: modalScrollable);
+    expect(unrecognizedFinder, findsOneWidget);
+
+    final unknownIngrFinder = find.text('UnknownIngr');
+    await tester.scrollUntilVisible(unknownIngrFinder, 100, scrollable: modalScrollable);
+    expect(unknownIngrFinder, findsOneWidget);
+
+    // Tap Reject inside modal
+    final modalRejectButton = find.descendant(
+      of: find.byType(DraggableScrollableSheet),
+      matching: find.widgetWithText(OutlinedButton, 'Reject'),
+    );
+    expect(modalRejectButton, findsOneWidget);
+
+    await tester.tap(modalRejectButton);
+    await tester.pumpAndSettle();
+
+    // Verify product is rejected and modal is dismissed
+    expect(find.text('Product Details & AI Moderation'), findsNothing);
+    expect(fakeSupabase.updatedStatuses.last['productId'], equals('p-med'));
+    expect(fakeSupabase.updatedStatuses.last['status'], equals('rejected'));
+  });
 }
+
+

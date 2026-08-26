@@ -10,10 +10,16 @@ final adminModerationServiceProvider = Provider<AdminModerationService>((ref) {
 class ModerationEvaluation {
   final int confidenceScore;
   final List<String> flags;
+  final List<String> unrecognizedIngredients;
+  final double inciMatchRate;
+  final Map<String, int> deductions;
 
   const ModerationEvaluation({
     required this.confidenceScore,
     required this.flags,
+    this.unrecognizedIngredients = const [],
+    this.inciMatchRate = 1.0,
+    this.deductions = const {},
   });
 
   bool get isHighConfidence => confidenceScore >= 80;
@@ -29,45 +35,56 @@ class AdminModerationService {
   Future<ModerationEvaluation> evaluateProduct(Product product) async {
     int score = 100;
     final flags = <String>[];
+    final deductions = <String, int>{};
+    List<String> unrecognized = [];
+    double inciRate = 1.0;
 
     // 1. Name length check
     if (product.name.trim().length < 3) {
       flags.add('short_name');
       score -= 30;
+      deductions['short_name'] = -30;
     }
 
     // 2. Brand check
     if (product.brand == null || product.brand!.trim().isEmpty) {
       flags.add('missing_brand');
       score -= 15;
+      deductions['missing_brand'] = -15;
     }
 
     // 3. Spam detection
     if (_isSpam(product)) {
       flags.add('suspected_spam');
       score -= 40;
+      deductions['suspected_spam'] = -40;
     }
 
     // 4. INCI ingredient recognition rate check
     if (product.ingredients.isEmpty) {
       flags.add('no_ingredients');
       score -= 20;
+      deductions['no_ingredients'] = -20;
+      inciRate = 0.0;
     } else {
-      final unrecognized = await _inciSearchService.filterUnrecognizedIngredients(product.ingredients);
+      unrecognized = await _inciSearchService.filterUnrecognizedIngredients(product.ingredients);
+      final total = product.ingredients.length;
+      final recognizedCount = total - unrecognized.length;
+      inciRate = total > 0 ? recognizedCount / total : 0.0;
+
       if (unrecognized.isNotEmpty) {
         flags.add('unrecognized_ingredients');
-        final total = product.ingredients.length;
-        final recognizedCount = total - unrecognized.length;
-        final rate = total > 0 ? recognizedCount / total : 0.0;
-
-        if (rate < 0.5) {
+        if (inciRate < 0.5) {
           flags.add('low_inci_match');
           score -= 40;
-        } else if (rate < 0.8) {
+          deductions['low_inci_match'] = -40;
+        } else if (inciRate < 0.8) {
           flags.add('partial_inci_match');
           score -= 20;
+          deductions['partial_inci_match'] = -20;
         } else {
           score -= 10;
+          deductions['unrecognized_ingredients'] = -10;
         }
       }
     }
@@ -76,6 +93,9 @@ class AdminModerationService {
     return ModerationEvaluation(
       confidenceScore: finalScore,
       flags: flags,
+      unrecognizedIngredients: unrecognized,
+      inciMatchRate: inciRate,
+      deductions: deductions,
     );
   }
 
