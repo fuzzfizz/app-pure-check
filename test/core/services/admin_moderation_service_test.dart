@@ -256,6 +256,47 @@ void main() {
       expect(eval.reasonSummaries.first, contains('สารใหม่ได้รับการตรวจสอบรับรองตาม CosIng'));
     });
 
+    test('evaluateProduct handles multi-lingual Aqua / Water / Eau with 100% confidence', () async {
+      final fakeInci = FakeInciSearchService(unrecognizedReturn: []);
+      final fakeCosIng = FakeCosIngVerificationService();
+      final moderationService = AdminModerationService(fakeInci, fakeCosIng);
+
+      const product = Product(
+        id: 'p-water',
+        name: 'Hydra Essence',
+        brand: 'Clean Brand',
+        ingredients: ['Aqua / Water / Eau', 'Glycerin', 'Niacinamide'],
+      );
+
+      final eval = await moderationService.evaluateProduct(product);
+
+      expect(eval.confidenceScore, equals(100));
+      expect(eval.isHighConfidence, isTrue);
+      expect(eval.unrecognizedIngredients, isEmpty);
+    });
+
+    test('evaluateProduct rejects bogus mixture gas/water/aqua with deduction and unrecognized flag', () async {
+      final fakeInci = FakeInciSearchService(unrecognizedReturn: ['gas/water/aqua']);
+      final fakeCosIng = FakeCosIngVerificationService(
+        onVerifyBatch: (unknowns) => [], // AI rejects gas/water/aqua so returns empty verified list
+      );
+      final moderationService = AdminModerationService(fakeInci, fakeCosIng);
+
+      const product = Product(
+        id: 'p-bogus',
+        name: 'Bogus Cream',
+        brand: 'Fake Brand',
+        ingredients: ['gas/water/aqua', 'Niacinamide'],
+      );
+
+      final eval = await moderationService.evaluateProduct(product);
+
+      expect(eval.confidenceScore, lessThanOrEqualTo(80));
+      expect(eval.unrecognizedIngredients, contains('gas/water/aqua'));
+      expect(eval.flags, contains('unrecognized_ingredients'));
+      expect(eval.flags, contains('partial_inci_match'));
+    });
+
     test('adminModerationServiceProvider provides AdminModerationService instance', () {
       final container = ProviderContainer(
         overrides: [

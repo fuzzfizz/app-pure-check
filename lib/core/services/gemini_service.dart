@@ -5,6 +5,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../models/allergen.dart';
+import '../models/chemical_synonym_result.dart';
 import '../models/cosing_ingredient.dart';
 import '../models/user_profile.dart';
 import '../models/analysis_result.dart';
@@ -354,5 +355,66 @@ If the term is nonsense, spam, advertising text (e.g. "100% organic", "best crea
     }
 
     return null;
+  }
+
+  /// Evaluates whether an ingredient entry containing multi-lingual slashes ('/')
+  /// or parenthetical aliases represents a genuine single cosmetic substance synonym,
+  /// or if it is an invalid/hazardous mixture (e.g. 'gas/water/aqua').
+  Future<ChemicalSynonymResult?> resolveChemicalSynonym(String rawInput) async {
+    final term = rawInput.trim();
+    if (term.isEmpty) return null;
+
+    final prompt = '''
+You are an expert Cosmetic Chemist and Regulatory Toxicologist specializing in INCI nomenclature.
+Analyze this ingredient candidate: "$term"
+
+Determine:
+1. Is this entry a valid multi-lingual designation, standard cosmetic synonym, or botanical/chemical alias for ONE single cosmetic ingredient?
+   (Examples of VALID synonyms:
+    - "Aqua / Water / Eau" -> represents single substance Water (INCI: Water)
+    - "Aqua/Water" -> represents Water (INCI: Water)
+    - "Water (Aqua)" -> represents Water (INCI: Water)
+    - "Tocopherol (Vitamin E)" -> represents Tocopherol (INCI: Tocopherol)
+    - "Simmondsia Chinensis (Jojoba) Seed Oil" -> represents Jojoba Seed Oil (INCI: Simmondsia Chinensis Seed Oil)
+    - "Butyrospermum Parkii (Shea) Butter" -> represents Shea Butter (INCI: Butyrospermum Parkii Butter)
+    - "Centella Asiatica Extract / Gotu Kola" -> represents Centella Asiatica Extract)
+2. Or is it an INVALID, suspicious, mixed, nonsensical, or hazardous combination?
+   (Examples of INVALID combinations:
+    - "gas/water/aqua" -> INVALID (gas is not a cosmetic synonym for water)
+    - "poison / water" -> INVALID
+    - "car fuel / glycerin" -> INVALID
+    - "bleach / aqua" -> INVALID
+    - "randomtext / niacinamide" -> INVALID)
+
+Return ONLY valid JSON in this exact format:
+{
+  "raw_input": "$term",
+  "is_valid_synonym": true,
+  "canonical_inci_name": "Standard Single INCI Name",
+  "reason": "Brief English explanation why it is valid or invalid"
+}
+
+If it is INVALID, return:
+{
+  "raw_input": "$term",
+  "is_valid_synonym": false,
+  "canonical_inci_name": null,
+  "reason": "Explain why it is invalid or suspicious"
+}
+''';
+
+    for (final modelName in _candidateModels) {
+      try {
+        final model = await _getModel(modelName: modelName);
+        final response = await model.generateContent([Content.text(prompt)]);
+        final text = response.text ?? '{}';
+        final json = jsonDecode(text) as Map<String, dynamic>;
+        return ChemicalSynonymResult.fromJson(json);
+      } catch (_) {
+        // Try next candidate model
+      }
+    }
+
+    return await _deepSeekService.resolveChemicalSynonym(rawInput);
   }
 }

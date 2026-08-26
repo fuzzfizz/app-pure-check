@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:pure_check/core/models/chemical_synonym_result.dart';
 import 'package:pure_check/core/models/cosing_ingredient.dart';
 import 'package:pure_check/core/services/cosing_verification_service.dart';
 import 'package:pure_check/core/services/gemini_service.dart';
@@ -9,8 +10,31 @@ import 'package:pure_check/core/services/supabase_service.dart';
 
 class FakeGeminiService extends GeminiService {
   final CosIngIngredient? Function(String name)? onVerifyCosIng;
+  final ChemicalSynonymResult? Function(String input)? onResolveSynonym;
 
-  FakeGeminiService({this.onVerifyCosIng});
+  FakeGeminiService({this.onVerifyCosIng, this.onResolveSynonym});
+
+  @override
+  Future<ChemicalSynonymResult?> resolveChemicalSynonym(String rawInput) async {
+    if (onResolveSynonym != null) return onResolveSynonym!(rawInput);
+    if (rawInput.contains('gas') || rawInput.contains('poison')) {
+      return ChemicalSynonymResult(
+        rawInput: rawInput,
+        isValidSynonym: false,
+        canonicalInciName: null,
+        reason: 'Invalid or suspicious mixture',
+      );
+    }
+    if (rawInput.contains('Aqua') || rawInput.contains('Water') || rawInput.contains('Eau')) {
+      return ChemicalSynonymResult(
+        rawInput: rawInput,
+        isValidSynonym: true,
+        canonicalInciName: 'Water',
+        reason: 'Aqua, Water, and Eau are multi-lingual translations for water',
+      );
+    }
+    return null;
+  }
 
   @override
   Future<CosIngIngredient?> verifyCosIngIngredient(String rawName) async {
@@ -155,6 +179,52 @@ void main() {
       expect(results.first.name, 'Madecassoside');
       expect(fakeSupabase.addedInci.length, 1);
       expect(fakeSupabase.addedInci.first['name'], 'Madecassoside');
+    });
+
+    test('verifyIngredient successfully validates multi-lingual cosmetic synonyms (Aqua / Water / Eau)', () async {
+      final fakeGemini = FakeGeminiService();
+      final fakeSupabase = FakeSupabaseService();
+
+      final service = CosIngVerificationService(
+        geminiService: fakeGemini,
+        supabaseService: fakeSupabase,
+      );
+
+      final result = await service.verifyIngredient('Aqua / Water / Eau');
+      expect(result, isNotNull);
+      expect(result!.isValidInci, isTrue);
+      expect(result.confidenceScore, 100);
+    });
+
+    test('verifyIngredient explicitly blocks and rejects bogus/invalid mixtures like gas/water/aqua', () async {
+      final fakeGemini = FakeGeminiService();
+      final fakeSupabase = FakeSupabaseService();
+
+      final service = CosIngVerificationService(
+        geminiService: fakeGemini,
+        supabaseService: fakeSupabase,
+      );
+
+      final result = await service.verifyIngredient('gas/water/aqua');
+      expect(result, isNotNull);
+      expect(result!.isValidInci, isFalse);
+      expect(result.confidenceScore, 0);
+      expect(result.category, 'Invalid Mixture / Spam');
+    });
+
+    test('verifyIngredient explicitly blocks toxic combinations like poison / water', () async {
+      final fakeGemini = FakeGeminiService();
+      final fakeSupabase = FakeSupabaseService();
+
+      final service = CosIngVerificationService(
+        geminiService: fakeGemini,
+        supabaseService: fakeSupabase,
+      );
+
+      final result = await service.verifyIngredient('poison / water');
+      expect(result, isNotNull);
+      expect(result!.isValidInci, isFalse);
+      expect(result.confidenceScore, 0);
     });
   });
 }

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../models/allergen.dart';
+import '../models/chemical_synonym_result.dart';
 import '../models/user_profile.dart';
 import '../models/analysis_result.dart';
 
@@ -212,6 +213,78 @@ Rules:
       return {};
     } catch (_) {
       return {};
+    }
+  }
+
+  Future<ChemicalSynonymResult?> resolveChemicalSynonym(String rawInput) async {
+    final apiKey = await _getActiveKey();
+    final term = rawInput.trim();
+    if (apiKey == null || apiKey.isEmpty || term.isEmpty) {
+      return null;
+    }
+
+    final prompt = '''
+You are an expert Cosmetic Chemist and Regulatory Toxicologist specializing in INCI nomenclature.
+Analyze this ingredient candidate: "$term"
+
+Determine:
+1. Is this entry a valid multi-lingual designation, standard cosmetic synonym, or botanical/chemical alias for ONE single cosmetic ingredient?
+   (Examples of VALID synonyms:
+    - "Aqua / Water / Eau" -> represents single substance Water (INCI: Water)
+    - "Aqua/Water" -> represents Water (INCI: Water)
+    - "Water (Aqua)" -> represents Water (INCI: Water)
+    - "Tocopherol (Vitamin E)" -> represents Tocopherol (INCI: Tocopherol)
+    - "Simmondsia Chinensis (Jojoba) Seed Oil" -> represents Jojoba Seed Oil (INCI: Simmondsia Chinensis Seed Oil)
+    - "Butyrospermum Parkii (Shea) Butter" -> represents Shea Butter (INCI: Butyrospermum Parkii Butter)
+    - "Centella Asiatica Extract / Gotu Kola" -> represents Centella Asiatica Extract)
+2. Or is it an INVALID, suspicious, mixed, nonsensical, or hazardous combination?
+   (Examples of INVALID combinations:
+    - "gas/water/aqua" -> INVALID (gas is not a cosmetic synonym for water)
+    - "poison / water" -> INVALID
+    - "car fuel / glycerin" -> INVALID
+    - "bleach / aqua" -> INVALID
+    - "randomtext / niacinamide" -> INVALID)
+
+Return ONLY valid JSON in this exact format:
+{
+  "raw_input": "$term",
+  "is_valid_synonym": true,
+  "canonical_inci_name": "Standard Single INCI Name",
+  "reason": "Brief English explanation why it is valid or invalid"
+}
+
+If it is INVALID, return:
+{
+  "raw_input": "$term",
+  "is_valid_synonym": false,
+  "canonical_inci_name": null,
+  "reason": "Explain why it is invalid or suspicious"
+}
+''';
+
+    try {
+      final response = await http.post(
+        Uri.parse(_getEndpoint(apiKey)),
+        headers: _getHeaders(apiKey),
+        body: jsonEncode({
+          'model': _getModelName(apiKey),
+          'messages': [
+            {'role': 'user', 'content': prompt},
+          ],
+          'response_format': {'type': 'json_object'},
+          'temperature': 0.1,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final content = data['choices']?[0]?['message']?['content'] as String? ?? '{}';
+        final json = jsonDecode(content) as Map<String, dynamic>;
+        return ChemicalSynonymResult.fromJson(json);
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 }

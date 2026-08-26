@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import '../data/inci_core_dataset.dart';
 import '../models/cosing_ingredient.dart';
 import 'gemini_service.dart';
 import 'supabase_service.dart';
@@ -29,10 +30,59 @@ class CosIngVerificationService {
   })  : _httpClient = httpClient ?? http.Client();
 
   /// Verifies a single unknown ingredient name against Open Beauty Facts CosIng API,
-  /// with an AI fallback to Gemini Regulatory Chemist.
+  /// with AI Chemical Synonym & Regulatory Chemist validation.
   Future<CosIngIngredient?> verifyIngredient(String rawName) async {
     final cleanName = rawName.trim();
     if (cleanName.isEmpty) return null;
+
+    // 0. If name contains slashes ('/') or brackets ('()'), evaluate with AI Chemical Synonym Analyzer
+    if (cleanName.contains('/') || (cleanName.contains('(') && cleanName.contains(')'))) {
+      try {
+        final synonymResult = await geminiService.resolveChemicalSynonym(cleanName);
+        if (synonymResult != null) {
+          if (!synonymResult.isValidSynonym) {
+            // Explicitly reject bogus/suspicious combinations like 'gas/water/aqua' or 'poison/water'
+            return CosIngIngredient(
+              name: cleanName,
+              isValidInci: false,
+              category: 'Invalid Mixture / Spam',
+              descriptionTh: 'ตรวจพบชื่อสารที่น่าสงสัยหรือไม่ใช่สารเครื่องสำอางสากล (${synonymResult.reason})',
+              confidenceScore: 0,
+            );
+          }
+
+          // If valid synonym for a single substance (e.g. 'Aqua / Water / Eau' -> 'Water')
+          final canonical = synonymResult.canonicalInciName;
+          if (canonical != null && canonical.isNotEmpty) {
+            if (InciCoreDataset.contains(canonical)) {
+              final localItem = InciCoreDataset.find(canonical);
+              return CosIngIngredient(
+                name: cleanName,
+                isValidInci: true,
+                category: localItem?.category ?? 'Cosmetic Ingredient',
+                descriptionTh: localItem?.descriptionTh ?? 'สารเครื่องสำอางมาตรฐานสากล',
+                confidenceScore: 100,
+              );
+            }
+
+            // Verify canonical name
+            final canonicalVerified = await verifyIngredient(canonical);
+            if (canonicalVerified != null && canonicalVerified.isValidInci) {
+              return CosIngIngredient(
+                name: cleanName,
+                isValidInci: true,
+                cosingId: canonicalVerified.cosingId,
+                category: canonicalVerified.category,
+                descriptionTh: canonicalVerified.descriptionTh,
+                confidenceScore: canonicalVerified.confidenceScore,
+              );
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Chemical synonym resolution error: $e');
+      }
+    }
 
     // 1. Attempt Open Beauty Facts / CosIng REST API lookup
     try {
