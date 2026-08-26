@@ -260,8 +260,12 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
                 hintText: l10n.ingredientsPlaceholder,
                 alignLabelWithHint: true,
                 helperText: _ingredientsCtrl.text.trim().isNotEmpty
-                    ? 'ตรวจพบ ${_ingredientsCtrl.text.split(RegExp(r'[,;]')).where((s) => s.trim().isNotEmpty).length} ส่วนผสม'
-                    : 'คั่นแต่ละส่วนผสมด้วยเครื่องหมายจุลภาค (,)',
+                    ? (l10n.localeName == 'th'
+                        ? 'ตรวจพบ ${_ingredientsCtrl.text.split(RegExp(r'[,;]')).where((s) => s.trim().isNotEmpty).length} ส่วนผสม'
+                        : 'Detected ${_ingredientsCtrl.text.split(RegExp(r'[,;]')).where((s) => s.trim().isNotEmpty).length} ingredients')
+                    : (l10n.localeName == 'th'
+                        ? 'คั่นแต่ละส่วนผสมด้วยเครื่องหมายจุลภาค (,)'
+                        : 'Separate each ingredient with a comma (,)'),
                 helperStyle: TextStyle(
                   color: _ingredientsCtrl.text.trim().isNotEmpty
                       ? AppColors.primary
@@ -290,12 +294,14 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
-                        SizedBox(width: 6),
+                      children: [
+                        const Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
+                        const SizedBox(width: 6),
                         Text(
-                          'คำแนะนำส่วนผสมมาตรฐาน (INCI):',
-                          style: TextStyle(
+                          l10n.localeName == 'th'
+                              ? 'คำแนะนำส่วนผสมมาตรฐาน (INCI):'
+                              : 'Standard INCI Suggestions:',
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primary,

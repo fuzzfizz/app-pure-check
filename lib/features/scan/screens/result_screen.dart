@@ -219,11 +219,11 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStatPill('ปลอดภัย', safeList.length, AppColors.safe, Icons.check_circle_outline),
+                        _buildStatPill(l10n.safe, safeList.length, AppColors.safe, Icons.check_circle_outline, l10n.localeName == 'th'),
                         Container(width: 1, height: 24, color: Colors.grey.shade300),
-                        _buildStatPill('ควรระวัง', cautionList.length, AppColors.caution, Icons.warning_amber_rounded),
+                        _buildStatPill(l10n.caution, cautionList.length, AppColors.caution, Icons.warning_amber_rounded, l10n.localeName == 'th'),
                         Container(width: 1, height: 24, color: Colors.grey.shade300),
-                        _buildStatPill('เสี่ยงสูง', dangerList.length, AppColors.danger, Icons.error_outline),
+                        _buildStatPill(l10n.danger, dangerList.length, AppColors.danger, Icons.error_outline, l10n.localeName == 'th'),
                       ],
                     ),
                   ),
@@ -423,7 +423,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     );
   }
 
-  Widget _buildStatPill(String label, int count, Color color, IconData icon) {
+  Widget _buildStatPill(String label, int count, Color color, IconData icon, bool isTh) {
+    final countText = isTh ? '$count รายการ' : '$count ${count == 1 ? "item" : "items"}';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -434,7 +435,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$count รายการ',
+              countText,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
@@ -460,6 +461,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     Color color,
     AppLocalizations l10n,
   ) {
+    final isTh = l10n.localeName == 'th';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -529,7 +531,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                       const SizedBox(height: 8),
                       const Divider(),
                       const SizedBox(height: 4),
-                      if (descTh != null && descTh.isNotEmpty) ...[
+                      if (descTh != null && descTh.isNotEmpty && isTh) ...[
                         Text(
                           'หน้าที่ & สรรพคุณ: $descTh',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -543,6 +545,14 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                           l10n.functionProperty(ing.function!),
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: AppColors.textSecondary,
+                              ),
+                        ),
+                      ] else if (descTh != null && descTh.isNotEmpty) ...[
+                        Text(
+                          'Function & Benefits: $descTh',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontSize: 13,
                               ),
                         ),
                       ],

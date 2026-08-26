@@ -408,7 +408,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                               ElevatedButton.icon(
                                 onPressed: () => _controller?.switchCamera(),
                                 icon: const Icon(Icons.cameraswitch_rounded),
-                                label: const Text('สลับกล้อง / Switch Camera'),
+                                label: Text(l10n.localeName == 'th' ? 'สลับกล้อง' : 'Switch Camera'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.white,

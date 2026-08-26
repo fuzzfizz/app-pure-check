@@ -81,6 +81,7 @@ void main() {
           geminiServiceProvider.overrideWithValue(FakeGeminiService()),
         ],
         child: MaterialApp(
+          locale: const Locale('th'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: ManualEntryScreen(
@@ -148,6 +149,39 @@ void main() {
 
     expect(find.byType(TypoCorrectionDialog), findsOneWidget);
     expect(find.text('Niacinamide'), findsOneWidget);
+  });
+
+  testWidgets('ManualEntryScreen renders English suggestions and helper text when in English locale', (WidgetTester tester) async {
+    final fakeInci = FakeInciSearchService(
+      onSearch: (query) => ['Glycerin'],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inciSearchServiceProvider.overrideWithValue(fakeInci),
+          geminiServiceProvider.overrideWithValue(FakeGeminiService()),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ManualEntryScreen(
+            barcode: '123456',
+            onBack: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final textFields = find.byType(TextField);
+    await tester.enterText(textFields.at(2), 'Gly');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+
+    expect(find.text('Standard INCI Suggestions:'), findsOneWidget);
+    expect(find.text('Detected 1 ingredients'), findsOneWidget);
   });
 }
 
