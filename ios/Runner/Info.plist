@@ -68,5 +68,26 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>เราจำเป็นต้องเข้าถึงกล้องเพื่อใช้สแกนบาร์โค้ดของผลิตภัณฑ์สำหรับค้นหาและวิเคราะห์ส่วนผสม</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>th</string>
+		<string>en</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.purecheck.pureCheck</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>purecheck</string>
+				<string>io.supabase.purecheck</string>
+			</array>
+		</dict>
+	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
