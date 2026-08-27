@@ -5,7 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/password_validator.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/password_requirements_view.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -14,6 +16,7 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+  final _usernameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
@@ -21,12 +24,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _error;
 
   Future<void> _register(AppLocalizations l10n) async {
+    if (_usernameCtrl.text.trim().isEmpty || !PasswordValidator.isUsernameValid(_usernameCtrl.text)) {
+      setState(() => _error = l10n.invalidUsername);
+      return;
+    }
     if (_emailCtrl.text.trim().isEmpty) {
       setState(() => _error = l10n.pleaseEnterEmail);
       return;
     }
     if (_passCtrl.text.isEmpty) {
       setState(() => _error = l10n.pleaseEnterPassword);
+      return;
+    }
+    if (!PasswordValidator.isPasswordValid(_passCtrl.text)) {
+      setState(() => _error = l10n.invalidPasswordRequirements);
       return;
     }
     if (_confirmCtrl.text.isEmpty) {
@@ -42,6 +53,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final res = await Supabase.instance.client.auth.signUp(
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
+        data: {'username': _usernameCtrl.text.trim()},
       );
       if (mounted) {
         if (res.session == null && res.user != null) {
@@ -52,9 +64,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           });
         } else {
           final user = res.user ?? Supabase.instance.client.auth.currentUser;
+          final username = _usernameCtrl.text.trim();
           ref.read(authNotifierProvider.notifier).setUserAndProfile(
             user,
-            user != null ? UserProfile.empty(user.id) : null,
+            user != null ? UserProfile.empty(user.id, username: username) : null,
           );
           context.go('/onboarding');
         }
@@ -70,6 +83,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
+    _usernameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
     _confirmCtrl.dispose();
@@ -94,20 +108,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: 40),
               TextField(
+                controller: _usernameCtrl,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: l10n.username,
+                  hintText: l10n.usernameHint,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 decoration: InputDecoration(labelText: l10n.email),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passCtrl,
                 obscureText: true,
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(labelText: l10n.password),
               ),
+              const SizedBox(height: 8),
+              PasswordRequirementsView(password: _passCtrl.text),
               const SizedBox(height: 16),
               TextField(
                 controller: _confirmCtrl,
                 obscureText: true,
+                textInputAction: TextInputAction.done,
                 decoration: InputDecoration(labelText: l10n.confirmPassword),
               ),
               if (_error != null) ...[

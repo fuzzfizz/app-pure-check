@@ -20,7 +20,7 @@ class PasswordRequirementsView extends StatelessWidget {
           Icon(
             isMet ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
             size: 16,
-            color: isMet ? AppColors.success : AppColors.textSecondary.withOpacity(0.6),
+            color: isMet ? AppColors.success : AppColors.textSecondary.withValues(alpha: 0.6),
           ),
           const SizedBox(width: 8),
           Expanded(
