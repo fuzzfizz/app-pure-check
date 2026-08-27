@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 
@@ -13,14 +14,14 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailCtrl = TextEditingController();
+  final _identifierCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
 
   Future<void> _login(AppLocalizations l10n) async {
-    if (_emailCtrl.text.trim().isEmpty) {
-      setState(() => _error = l10n.pleaseEnterEmail);
+    if (_identifierCtrl.text.trim().isEmpty) {
+      setState(() => _error = l10n.enterEmailOrUsername);
       return;
     }
     if (_passCtrl.text.isEmpty) {
@@ -29,8 +30,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
     setState(() { _loading = true; _error = null; });
     try {
+      final identifier = _identifierCtrl.text.trim();
+      String emailToUse = identifier;
+      if (!identifier.contains('@')) {
+        // It's a username, resolve email via SupabaseService
+        final resolvedEmail = await SupabaseService().getEmailByUsername(identifier);
+        if (resolvedEmail == null || resolvedEmail.isEmpty) {
+          if (mounted) {
+            setState(() {
+              _error = l10n.userNotFound;
+              _loading = false;
+            });
+          }
+          return;
+        }
+        emailToUse = resolvedEmail;
+      }
+
       await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailCtrl.text.trim(),
+        email: emailToUse,
         password: _passCtrl.text,
       );
       if (mounted) {
@@ -44,9 +62,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
       }
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = l10n.loginFailed(e.toString()));
+      if (mounted) setState(() => _error = l10n.loginFailed(e.toString()));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -54,7 +72,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _emailCtrl.dispose();
+    _identifierCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
   }
@@ -77,9 +95,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: 40),
               TextField(
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(labelText: l10n.email, hintText: 'example@email.com'),
+                controller: _identifierCtrl,
+                keyboardType: TextInputType.text,
+                decoration: InputDecoration(
+                  labelText: l10n.emailOrUsername,
+                  hintText: l10n.usernameHint,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
