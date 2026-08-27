@@ -18,6 +18,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hello => 'Hello!';
 
   @override
+  String helloUser(String username) {
+    return 'Hello, $username 👋';
+  }
+
+  @override
   String skinProfileLabel(String skinType) {
     return 'Your Skin Profile: $skinType';
   }

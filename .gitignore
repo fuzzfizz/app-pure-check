@@ -53,4 +53,6 @@ app.*.map.json
 .superpowers/
 .agents/
 .obsidian/
-SKILL.md
+SKILL.md
+supabase/.temp/
+supabase/.branches/

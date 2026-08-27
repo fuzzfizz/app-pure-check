@@ -116,6 +116,12 @@ abstract class AppLocalizations {
   /// **'สวัสดีครับ!'**
   String get hello;
 
+  /// No description provided for @helloUser.
+  ///
+  /// In th, this message translates to:
+  /// **'สวัสดีคุณ {username} 👋'**
+  String helloUser(String username);
+
   /// No description provided for @skinProfileLabel.
   ///
   /// In th, this message translates to:

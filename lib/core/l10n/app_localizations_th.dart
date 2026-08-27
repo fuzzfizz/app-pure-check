@@ -18,6 +18,11 @@ class AppLocalizationsTh extends AppLocalizations {
   String get hello => 'สวัสดีครับ!';
 
   @override
+  String helloUser(String username) {
+    return 'สวัสดีคุณ $username 👋';
+  }
+
+  @override
   String skinProfileLabel(String skinType) {
     return 'โปรไฟล์ผิวของคุณ: ผิว$skinType';
   }

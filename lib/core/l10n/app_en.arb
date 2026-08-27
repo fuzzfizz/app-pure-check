@@ -5,6 +5,12 @@
 
   "welcome": "Welcome",
   "hello": "Hello!",
+  "helloUser": "Hello, {username} 👋",
+  "@helloUser": {
+    "placeholders": {
+      "username": { "type": "String" }
+    }
+  },
   "skinProfileLabel": "Your Skin Profile: {skinType}",
   "@skinProfileLabel": {
     "placeholders": {

@@ -60,6 +60,11 @@ class HomeScreen extends ConsumerWidget {
                 profileAsync.when(
                   data: (profile) {
                     final skinTypeLabel = profile?.skinType.label(context) ?? l10n.notSpecified;
+                    final user = ref.watch(currentUserProvider);
+                    final username = (profile?.username != null && profile!.username!.trim().isNotEmpty)
+                        ? profile.username!.trim()
+                        : (user?.userMetadata?['username'] as String? ?? user?.email?.split('@').first ?? 'User');
+
                     return Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -70,7 +75,7 @@ class HomeScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            l10n.hello,
+                            l10n.helloUser(username),
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
                           ),
                           const SizedBox(height: 6),
