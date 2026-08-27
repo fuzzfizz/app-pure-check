@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppColors {
   // Safety traffic-light
   static const safe = Color(0xFF4CAF82);
+  static const success = safe;
   static const caution = Color(0xFFF5A623);
   static const danger = Color(0xFFE53935);
 
@@ -12,6 +13,8 @@ class AppColors {
   static const primaryDark = Color(0xFF4A9E7F);
   static const mintBg = Color(0xFFE8F5EE);
   static const surface = Color(0xFFF7FBF8);
+  static const cardBg = surface;
+  static const border = mintBg;
   static const white = Color(0xFFFFFFFF);
 
   // Text
