@@ -275,5 +275,18 @@
   "approve": "Approve",
   "reject": "Reject",
   "confidenceScore": "Confidence Score",
-  "noPendingProducts": "No pending products to review"
+  "noPendingProducts": "No pending products to review",
+
+  "username": "Username",
+  "emailOrUsername": "Email or Username",
+  "enterEmailOrUsername": "Please enter email or username",
+  "usernameHint": "e.g. user123 or example@gmail.com",
+  "invalidUsername": "Username must be 3-20 characters (A-Z, a-z, 0-9, _, -)",
+  "passwordRuleMinLength": "At least 8 characters",
+  "passwordRuleUppercase": "At least 1 uppercase letter (A-Z)",
+  "passwordRuleLowercase": "At least 1 lowercase letter (a-z)",
+  "passwordRuleNumber": "At least 1 number (0-9)",
+  "passwordRuleSpecialChar": "At least 1 special character (!@#$%)",
+  "userNotFound": "User account not found or invalid credentials",
+  "invalidPasswordRequirements": "Password does not meet the security requirements"
 }

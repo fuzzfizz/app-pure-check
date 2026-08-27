@@ -1171,6 +1171,120 @@ abstract class AppLocalizations {
   /// In th, this message translates to:
   /// **'คงชื่อเดิมไว้'**
   String get keepOriginal;
+
+  /// No description provided for @adminReviewTitle.
+  ///
+  /// In th, this message translates to:
+  /// **'การอนุมัติผลิตภัณฑ์สำหรับแอดมิน'**
+  String get adminReviewTitle;
+
+  /// No description provided for @pendingQueue.
+  ///
+  /// In th, this message translates to:
+  /// **'รายการรอตรวจสอบ'**
+  String get pendingQueue;
+
+  /// No description provided for @autoApproveSafe.
+  ///
+  /// In th, this message translates to:
+  /// **'อนุมัติอัตโนมัติรายการที่ปลอดภัย'**
+  String get autoApproveSafe;
+
+  /// No description provided for @approve.
+  ///
+  /// In th, this message translates to:
+  /// **'อนุมัติ'**
+  String get approve;
+
+  /// No description provided for @reject.
+  ///
+  /// In th, this message translates to:
+  /// **'ปฏิเสธ'**
+  String get reject;
+
+  /// No description provided for @confidenceScore.
+  ///
+  /// In th, this message translates to:
+  /// **'คะแนนความเชื่อมั่น'**
+  String get confidenceScore;
+
+  /// No description provided for @noPendingProducts.
+  ///
+  /// In th, this message translates to:
+  /// **'ไม่มีรายการผลิตภัณฑ์ที่รอตรวจสอบ'**
+  String get noPendingProducts;
+
+  /// No description provided for @username.
+  ///
+  /// In th, this message translates to:
+  /// **'ชื่อผู้ใช้'**
+  String get username;
+
+  /// No description provided for @emailOrUsername.
+  ///
+  /// In th, this message translates to:
+  /// **'อีเมล หรือ ชื่อผู้ใช้'**
+  String get emailOrUsername;
+
+  /// No description provided for @enterEmailOrUsername.
+  ///
+  /// In th, this message translates to:
+  /// **'กรุณากรอกอีเมลหรือชื่อผู้ใช้'**
+  String get enterEmailOrUsername;
+
+  /// No description provided for @usernameHint.
+  ///
+  /// In th, this message translates to:
+  /// **'เช่น user123 หรือ example@gmail.com'**
+  String get usernameHint;
+
+  /// No description provided for @invalidUsername.
+  ///
+  /// In th, this message translates to:
+  /// **'ชื่อผู้ใช้ต้องมี 3-20 ตัวอักษร (A-Z, a-z, 0-9, _, -)'**
+  String get invalidUsername;
+
+  /// No description provided for @passwordRuleMinLength.
+  ///
+  /// In th, this message translates to:
+  /// **'ความยาวอย่างน้อย 8 ตัวอักษร'**
+  String get passwordRuleMinLength;
+
+  /// No description provided for @passwordRuleUppercase.
+  ///
+  /// In th, this message translates to:
+  /// **'มีตัวอักษรพิมพ์ใหญ่ (A-Z)'**
+  String get passwordRuleUppercase;
+
+  /// No description provided for @passwordRuleLowercase.
+  ///
+  /// In th, this message translates to:
+  /// **'มีตัวอักษรพิมพ์เล็ก (a-z)'**
+  String get passwordRuleLowercase;
+
+  /// No description provided for @passwordRuleNumber.
+  ///
+  /// In th, this message translates to:
+  /// **'มีตัวเลข (0-9)'**
+  String get passwordRuleNumber;
+
+  /// No description provided for @passwordRuleSpecialChar.
+  ///
+  /// In th, this message translates to:
+  /// **'มีอักขระพิเศษ (เช่น !@#\$%)'**
+  String get passwordRuleSpecialChar;
+
+  /// No description provided for @userNotFound.
+  ///
+  /// In th, this message translates to:
+  /// **'ไม่พบบัญชีผู้ใช้นี้ หรือข้อมูลไม่ถูกต้อง'**
+  String get userNotFound;
+
+  /// No description provided for @invalidPasswordRequirements.
+  ///
+  /// In th, this message translates to:
+  /// **'รหัสผ่านไม่ตรงตามเงื่อนไขความปลอดภัย'**
+  String get invalidPasswordRequirements;
 }
 
 class _AppLocalizationsDelegate

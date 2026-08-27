@@ -589,4 +589,63 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get keepOriginal => 'คงชื่อเดิมไว้';
+
+  @override
+  String get adminReviewTitle => 'การอนุมัติผลิตภัณฑ์สำหรับแอดมิน';
+
+  @override
+  String get pendingQueue => 'รายการรอตรวจสอบ';
+
+  @override
+  String get autoApproveSafe => 'อนุมัติอัตโนมัติรายการที่ปลอดภัย';
+
+  @override
+  String get approve => 'อนุมัติ';
+
+  @override
+  String get reject => 'ปฏิเสธ';
+
+  @override
+  String get confidenceScore => 'คะแนนความเชื่อมั่น';
+
+  @override
+  String get noPendingProducts => 'ไม่มีรายการผลิตภัณฑ์ที่รอตรวจสอบ';
+
+  @override
+  String get username => 'ชื่อผู้ใช้';
+
+  @override
+  String get emailOrUsername => 'อีเมล หรือ ชื่อผู้ใช้';
+
+  @override
+  String get enterEmailOrUsername => 'กรุณากรอกอีเมลหรือชื่อผู้ใช้';
+
+  @override
+  String get usernameHint => 'เช่น user123 หรือ example@gmail.com';
+
+  @override
+  String get invalidUsername =>
+      'ชื่อผู้ใช้ต้องมี 3-20 ตัวอักษร (A-Z, a-z, 0-9, _, -)';
+
+  @override
+  String get passwordRuleMinLength => 'ความยาวอย่างน้อย 8 ตัวอักษร';
+
+  @override
+  String get passwordRuleUppercase => 'มีตัวอักษรพิมพ์ใหญ่ (A-Z)';
+
+  @override
+  String get passwordRuleLowercase => 'มีตัวอักษรพิมพ์เล็ก (a-z)';
+
+  @override
+  String get passwordRuleNumber => 'มีตัวเลข (0-9)';
+
+  @override
+  String get passwordRuleSpecialChar => 'มีอักขระพิเศษ (เช่น !@#\$%)';
+
+  @override
+  String get userNotFound => 'ไม่พบบัญชีผู้ใช้นี้ หรือข้อมูลไม่ถูกต้อง';
+
+  @override
+  String get invalidPasswordRequirements =>
+      'รหัสผ่านไม่ตรงตามเงื่อนไขความปลอดภัย';
 }

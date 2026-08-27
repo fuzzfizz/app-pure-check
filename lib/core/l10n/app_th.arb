@@ -275,5 +275,18 @@
   "approve": "อนุมัติ",
   "reject": "ปฏิเสธ",
   "confidenceScore": "คะแนนความเชื่อมั่น",
-  "noPendingProducts": "ไม่มีรายการผลิตภัณฑ์ที่รอตรวจสอบ"
+  "noPendingProducts": "ไม่มีรายการผลิตภัณฑ์ที่รอตรวจสอบ",
+
+  "username": "ชื่อผู้ใช้",
+  "emailOrUsername": "อีเมล หรือ ชื่อผู้ใช้",
+  "enterEmailOrUsername": "กรุณากรอกอีเมลหรือชื่อผู้ใช้",
+  "usernameHint": "เช่น user123 หรือ example@gmail.com",
+  "invalidUsername": "ชื่อผู้ใช้ต้องมี 3-20 ตัวอักษร (A-Z, a-z, 0-9, _, -)",
+  "passwordRuleMinLength": "ความยาวอย่างน้อย 8 ตัวอักษร",
+  "passwordRuleUppercase": "มีตัวอักษรพิมพ์ใหญ่ (A-Z)",
+  "passwordRuleLowercase": "มีตัวอักษรพิมพ์เล็ก (a-z)",
+  "passwordRuleNumber": "มีตัวเลข (0-9)",
+  "passwordRuleSpecialChar": "มีอักขระพิเศษ (เช่น !@#$%)",
+  "userNotFound": "ไม่พบบัญชีผู้ใช้นี้ หรือข้อมูลไม่ถูกต้อง",
+  "invalidPasswordRequirements": "รหัสผ่านไม่ตรงตามเงื่อนไขความปลอดภัย"
 }

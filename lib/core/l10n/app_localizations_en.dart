@@ -592,4 +592,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keepOriginal => 'Keep Original';
+
+  @override
+  String get adminReviewTitle => 'Admin Product Moderation';
+
+  @override
+  String get pendingQueue => 'Pending Queue';
+
+  @override
+  String get autoApproveSafe => 'Auto-Approve Safe';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String get confidenceScore => 'Confidence Score';
+
+  @override
+  String get noPendingProducts => 'No pending products to review';
+
+  @override
+  String get username => 'Username';
+
+  @override
+  String get emailOrUsername => 'Email or Username';
+
+  @override
+  String get enterEmailOrUsername => 'Please enter email or username';
+
+  @override
+  String get usernameHint => 'e.g. user123 or example@gmail.com';
+
+  @override
+  String get invalidUsername =>
+      'Username must be 3-20 characters (A-Z, a-z, 0-9, _, -)';
+
+  @override
+  String get passwordRuleMinLength => 'At least 8 characters';
+
+  @override
+  String get passwordRuleUppercase => 'At least 1 uppercase letter (A-Z)';
+
+  @override
+  String get passwordRuleLowercase => 'At least 1 lowercase letter (a-z)';
+
+  @override
+  String get passwordRuleNumber => 'At least 1 number (0-9)';
+
+  @override
+  String get passwordRuleSpecialChar => 'At least 1 special character (!@#\$%)';
+
+  @override
+  String get userNotFound => 'User account not found or invalid credentials';
+
+  @override
+  String get invalidPasswordRequirements =>
+      'Password does not meet the security requirements';
 }
