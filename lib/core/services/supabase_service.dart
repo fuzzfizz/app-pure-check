@@ -24,6 +24,39 @@ class SupabaseService {
 
   SupabaseClient get client => _client;
 
+  // Username to Email lookup
+  Future<String?> getEmailByUsername(String username) async {
+    final clean = username.trim().toLowerCase();
+    if (clean.isEmpty) return null;
+
+    try {
+      // 1. Try RPC get_email_by_username
+      final rpcRes = await _client.rpc('get_email_by_username', params: {
+        'p_username': clean,
+      });
+      if (rpcRes != null && rpcRes is String && rpcRes.isNotEmpty) {
+        return rpcRes;
+      }
+    } catch (_) {
+      // Fallback if RPC is not deployed yet or in test/offline mode
+    }
+
+    try {
+      // 2. Query profiles by username
+      final res = await _client
+          .from('profiles')
+          .select('id')
+          .ilike('username', clean)
+          .maybeSingle();
+      if (res != null && res['id'] != null) {
+        return null;
+      }
+    } catch (_) {
+      // Fallback
+    }
+
+    return null;
+  }
 
   // Profile
   Future<UserProfile?> getProfile(String userId) async {
