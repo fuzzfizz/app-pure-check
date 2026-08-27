@@ -32,6 +32,7 @@ extension SkinTypeX on SkinType {
 
 class UserProfile {
   final String id;
+  final String? username;
   final SkinType skinType;
   final List<String> skinConditions;
   final List<String> skinConcerns;
@@ -43,6 +44,7 @@ class UserProfile {
 
   const UserProfile({
     required this.id,
+    this.username,
     required this.skinType,
     this.skinConditions = const [],
     this.skinConcerns = const [],
@@ -51,8 +53,9 @@ class UserProfile {
     this.role = 'user',
   });
 
-  factory UserProfile.empty(String id) => UserProfile(
+  factory UserProfile.empty(String id, {String? username}) => UserProfile(
         id: id,
+        username: username,
         skinType: SkinType.normal,
         onboardingComplete: false,
         role: 'user',
@@ -60,6 +63,7 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         id: json['id'] as String,
+        username: json['username'] as String?,
         skinType: SkinTypeX.fromString(json['skin_type'] as String? ?? 'normal'),
         skinConditions: List<String>.from(json['skin_conditions'] ?? []),
         skinConcerns: List<String>.from(json['skin_concerns'] ?? []),
@@ -70,6 +74,7 @@ class UserProfile {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        if (username != null) 'username': username,
         'skin_type': skinType.value,
         'skin_conditions': skinConditions,
         'skin_concerns': skinConcerns,
@@ -79,6 +84,7 @@ class UserProfile {
       };
 
   UserProfile copyWith({
+    String? username,
     SkinType? skinType,
     List<String>? skinConditions,
     List<String>? skinConcerns,
@@ -87,6 +93,7 @@ class UserProfile {
     String? role,
   }) => UserProfile(
         id: id,
+        username: username ?? this.username,
         skinType: skinType ?? this.skinType,
         skinConditions: skinConditions ?? this.skinConditions,
         skinConcerns: skinConcerns ?? this.skinConcerns,
