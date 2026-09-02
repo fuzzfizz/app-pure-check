@@ -7,7 +7,6 @@ import '../../../core/models/product.dart';
 import '../../../core/services/inci_search_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../data/repositories/scan_repository_impl.dart';
 import '../providers/scan_provider.dart';
 import '../widgets/typo_correction_dialog.dart';
 
@@ -153,8 +152,8 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
       final unrecognized = await inciSearchService.filterUnrecognizedIngredients(ingredientsList);
 
       if (unrecognized.isNotEmpty) {
-        final geminiService = ref.read(geminiServiceProvider);
-        final typos = await geminiService.checkIngredientTypos(unrecognized);
+        final supabaseService = ref.read(supabaseServiceProvider);
+        final typos = await supabaseService.checkIngredientTypos(unrecognized);
 
         if (typos.isNotEmpty && mounted) {
           final acceptedCorrections = await showDialog<Map<String, String>>(

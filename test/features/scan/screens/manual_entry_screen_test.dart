@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_check/core/l10n/app_localizations.dart';
 import 'package:pure_check/core/services/inci_search_service.dart';
-import 'package:pure_check/core/services/gemini_service.dart';
+import 'package:pure_check/core/services/supabase_service.dart';
+import 'package:pure_check/features/auth/providers/auth_provider.dart';
 import 'package:pure_check/features/scan/screens/manual_entry_screen.dart';
-import 'package:pure_check/features/scan/data/repositories/scan_repository_impl.dart';
 import 'package:pure_check/features/scan/widgets/typo_correction_dialog.dart';
 
 class FakeInciSearchService implements InciSearchService {
@@ -29,10 +29,10 @@ class FakeInciSearchService implements InciSearchService {
   }
 }
 
-class FakeGeminiService extends GeminiService {
+class FakeSupabaseService extends SupabaseService {
   final Map<String, String> Function(List<String> unknown)? onCheckTypos;
 
-  FakeGeminiService({this.onCheckTypos});
+  FakeSupabaseService({this.onCheckTypos});
 
   @override
   Future<Map<String, String>> checkIngredientTypos(List<String> unknownIngredients) async {
@@ -47,7 +47,7 @@ void main() {
       ProviderScope(
         overrides: [
           inciSearchServiceProvider.overrideWithValue(FakeInciSearchService()),
-          geminiServiceProvider.overrideWithValue(FakeGeminiService()),
+          supabaseServiceProvider.overrideWithValue(FakeSupabaseService()),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -64,21 +64,16 @@ void main() {
     expect(find.byType(TextField), findsNWidgets(3));
   });
 
-  testWidgets('ManualEntryScreen shows suggestions chip list when typing >= 3 chars and auto-fills on tap', (WidgetTester tester) async {
+  testWidgets('ManualEntryScreen debounces and shows suggestions on typing in ingredients field', (WidgetTester tester) async {
     final fakeInci = FakeInciSearchService(
-      onSearch: (query) {
-        if (query.toLowerCase().contains('nia')) {
-          return ['Niacinamide'];
-        }
-        return [];
-      },
+      onSearch: (query) => ['Niacinamide'],
     );
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           inciSearchServiceProvider.overrideWithValue(fakeInci),
-          geminiServiceProvider.overrideWithValue(FakeGeminiService()),
+          supabaseServiceProvider.overrideWithValue(FakeSupabaseService()),
         ],
         child: MaterialApp(
           locale: const Locale('th'),
@@ -94,7 +89,10 @@ void main() {
     await tester.pumpAndSettle();
 
     final textFields = find.byType(TextField);
-    await tester.enterText(textFields.at(2), 'Nia');
+    expect(textFields, findsNWidgets(3));
+
+    // Type in ingredients textfield
+    await tester.enterText(textFields.at(2), 'Niac');
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump();
 
@@ -117,7 +115,7 @@ void main() {
     final fakeInci = FakeInciSearchService(
       onFilter: (ingredients) => ['Niacinmid'],
     );
-    final fakeGemini = FakeGeminiService(
+    final fakeSupabase = FakeSupabaseService(
       onCheckTypos: (unknown) => {'Niacinmid': 'Niacinamide'},
     );
 
@@ -125,7 +123,7 @@ void main() {
       ProviderScope(
         overrides: [
           inciSearchServiceProvider.overrideWithValue(fakeInci),
-          geminiServiceProvider.overrideWithValue(fakeGemini),
+          supabaseServiceProvider.overrideWithValue(fakeSupabase),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -160,7 +158,7 @@ void main() {
       ProviderScope(
         overrides: [
           inciSearchServiceProvider.overrideWithValue(fakeInci),
-          geminiServiceProvider.overrideWithValue(FakeGeminiService()),
+          supabaseServiceProvider.overrideWithValue(FakeSupabaseService()),
         ],
         child: MaterialApp(
           locale: const Locale('en'),
@@ -184,4 +182,3 @@ void main() {
     expect(find.text('Detected 1 ingredients'), findsOneWidget);
   });
 }
-

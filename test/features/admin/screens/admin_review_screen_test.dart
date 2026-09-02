@@ -5,7 +5,6 @@ import 'package:pure_check/core/l10n/app_localizations.dart';
 import 'package:pure_check/core/models/cosing_ingredient.dart';
 import 'package:pure_check/core/models/product.dart';
 import 'package:pure_check/core/services/cosing_verification_service.dart';
-import 'package:pure_check/core/services/gemini_service.dart';
 import 'package:pure_check/core/services/inci_search_service.dart';
 import 'package:pure_check/core/services/supabase_service.dart';
 import 'package:pure_check/features/auth/providers/auth_provider.dart';
@@ -14,7 +13,6 @@ import 'package:pure_check/features/admin/screens/admin_review_screen.dart';
 class FakeCosIngVerificationService extends CosIngVerificationService {
   FakeCosIngVerificationService()
       : super(
-          geminiService: GeminiService(),
           supabaseService: FakeSupabaseService(),
         );
 

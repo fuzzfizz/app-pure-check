@@ -4,33 +4,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../data/inci_core_dataset.dart';
 import '../models/cosing_ingredient.dart';
-import 'gemini_service.dart';
 import 'supabase_service.dart';
 import '../../features/auth/providers/auth_provider.dart';
-import '../../features/scan/data/repositories/scan_repository_impl.dart';
 
 final cosIngVerificationServiceProvider = Provider<CosIngVerificationService>((ref) {
-  final gemini = ref.watch(geminiServiceProvider);
   final supabase = ref.watch(supabaseServiceProvider);
   return CosIngVerificationService(
-    geminiService: gemini,
     supabaseService: supabase,
   );
 });
 
 class CosIngVerificationService {
-  final GeminiService geminiService;
   final SupabaseService supabaseService;
   final http.Client _httpClient;
 
   CosIngVerificationService({
-    required this.geminiService,
     required this.supabaseService,
     http.Client? httpClient,
   })  : _httpClient = httpClient ?? http.Client();
 
   /// Verifies a single unknown ingredient name against Open Beauty Facts CosIng API,
-  /// with AI Chemical Synonym & Regulatory Chemist validation.
+  /// with AI Chemical Synonym & Regulatory Chemist validation via Supabase Edge Function.
   Future<CosIngIngredient?> verifyIngredient(String rawName) async {
     final cleanName = rawName.trim();
     if (cleanName.isEmpty) return null;
@@ -38,21 +32,24 @@ class CosIngVerificationService {
     // 0. If name contains slashes ('/') or brackets ('()'), evaluate with AI Chemical Synonym Analyzer
     if (cleanName.contains('/') || (cleanName.contains('(') && cleanName.contains(')'))) {
       try {
-        final synonymResult = await geminiService.resolveChemicalSynonym(cleanName);
-        if (synonymResult != null) {
-          if (!synonymResult.isValidSynonym) {
+        final synonymData = await supabaseService.verifyIngredient(name: cleanName, action: 'synonym');
+        if (synonymData != null) {
+          final isValid = synonymData['is_valid_synonym'] == true;
+          final reason = synonymData['reason'] as String? ?? 'Invalid mixture';
+
+          if (!isValid) {
             // Explicitly reject bogus/suspicious combinations like 'gas/water/aqua' or 'poison/water'
             return CosIngIngredient(
               name: cleanName,
               isValidInci: false,
               category: 'Invalid Mixture / Spam',
-              descriptionTh: 'ตรวจพบชื่อสารที่น่าสงสัยหรือไม่ใช่สารเครื่องสำอางสากล (${synonymResult.reason})',
+              descriptionTh: 'ตรวจพบชื่อสารที่น่าสงสัยหรือไม่ใช่สารเครื่องสำอางสากล ($reason)',
               confidenceScore: 0,
             );
           }
 
           // If valid synonym for a single substance (e.g. 'Aqua / Water / Eau' -> 'Water')
-          final canonical = synonymResult.canonicalInciName;
+          final canonical = synonymData['canonical_inci_name'] as String?;
           if (canonical != null && canonical.isNotEmpty) {
             if (InciCoreDataset.contains(canonical)) {
               final localItem = InciCoreDataset.find(canonical);
@@ -97,10 +94,13 @@ class CosIngVerificationService {
           final officialName = ingData['name'] as String? ?? cleanName;
           final functions = (ingData['functions'] as List?)?.map((e) => e.toString()).join(', ') ?? 'Skin Conditioning';
 
-          // Enhance with Gemini for proper Thai description
-          final aiResult = await geminiService.verifyCosIngIngredient(officialName);
-          if (aiResult != null && aiResult.isValidInci) {
-            return aiResult;
+          // Enhance with Edge Function for proper Thai description
+          final aiData = await supabaseService.verifyIngredient(name: officialName, action: 'cosing');
+          if (aiData != null) {
+            final aiResult = CosIngIngredient.fromJson(aiData);
+            if (aiResult.isValidInci) {
+              return aiResult;
+            }
           }
 
           return CosIngIngredient(
@@ -117,8 +117,13 @@ class CosIngVerificationService {
       debugPrint('CosIng REST API check error (will use AI fallback): $e');
     }
 
-    // 2. Fallback to Gemini Regulatory Chemist Validation
-    return await geminiService.verifyCosIngIngredient(cleanName);
+    // 2. Fallback to Supabase Edge Function Regulatory Chemist Validation
+    final res = await supabaseService.verifyIngredient(name: cleanName, action: 'cosing');
+    if (res != null) {
+      return CosIngIngredient.fromJson(res);
+    }
+
+    return null;
   }
 
   /// Verifies a batch of unknown ingredients, and if valid, automatically synchronizes

@@ -6,33 +6,27 @@ import '../../../../core/models/analysis_result.dart';
 import '../../../../core/models/product.dart';
 import '../../../../core/models/user_profile.dart';
 import '../../../../core/services/beauty_facts_service.dart';
-import '../../../../core/services/gemini_service.dart';
 import '../../../../core/services/supabase_service.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../../domain/repositories/scan_repository.dart';
 
 final beautyFactsServiceProvider =
     Provider<BeautyFactsService>((ref) => BeautyFactsService());
-final geminiServiceProvider =
-    Provider<GeminiService>((ref) => GeminiService());
 
 final scanRepositoryProvider = Provider<ScanRepository>((ref) {
   return ScanRepositoryImpl(
     supabaseService: ref.watch(supabaseServiceProvider),
     beautyFactsService: ref.watch(beautyFactsServiceProvider),
-    geminiService: ref.watch(geminiServiceProvider),
   );
 });
 
 class ScanRepositoryImpl implements ScanRepository {
   final SupabaseService supabaseService;
   final BeautyFactsService beautyFactsService;
-  final GeminiService geminiService;
 
   ScanRepositoryImpl({
     required this.supabaseService,
     required this.beautyFactsService,
-    required this.geminiService,
   });
 
   @override
@@ -91,13 +85,102 @@ class ScanRepositoryImpl implements ScanRepository {
             Map<String, dynamic>.from(response.data as Map));
       }
     } catch (_) {
-      // Catch network or function invocation errors and fall back to Gemini client
+      // Catch network or function invocation errors and fall back to local rule-based heuristic
     }
 
-    return await geminiService.analyzeIngredients(
+    return _buildHeuristicAnalysis(
       profile: profile,
       allergens: allergens,
       ingredients: ingredients,
+    );
+  }
+
+  AnalysisResult _buildHeuristicAnalysis({
+    required UserProfile profile,
+    required List<Allergen> allergens,
+    required List<String> ingredients,
+  }) {
+    final List<FlaggedIngredient> flagged = [];
+    final List<IngredientBreakdown> breakdown = [];
+
+    for (final ing in ingredients) {
+      final normIng = ing.trim().toLowerCase();
+      SafetyLevel level = SafetyLevel.safe;
+      String? reason;
+      const function = 'สารบำรุง/ส่วนผสมเครื่องสำอาง (Cosmetic ingredient)';
+
+      final matchedAllergen = allergens.firstWhere(
+        (a) => a.ingredientName.trim().isNotEmpty &&
+            (normIng == a.ingredientName.trim().toLowerCase() ||
+                normIng.contains(a.ingredientName.trim().toLowerCase())),
+        orElse: () => const Allergen(id: '', userId: '', ingredientName: ''),
+      );
+
+      if (matchedAllergen.ingredientName.isNotEmpty) {
+        level = SafetyLevel.danger;
+        reason = 'ตรงกับสารก่อภูมิแพ้ที่คุณบันทึกไว้ (${matchedAllergen.ingredientName})';
+        flagged.add(FlaggedIngredient(
+          name: ing,
+          reason: reason,
+          riskLevel: SafetyLevel.danger,
+        ));
+      } else if (normIng.contains('parfum') || normIng.contains('fragrance')) {
+        if (profile.skinType == SkinType.sensitive ||
+            profile.avoidPreferences.any((p) => p.toLowerCase().contains('fragrance') || p.toLowerCase().contains('น้ำหอม'))) {
+          level = SafetyLevel.caution;
+          reason = 'น้ำหอม (Fragrance) อาจก่อให้เกิดการระคายเคืองในผิวแพ้ง่าย';
+          flagged.add(FlaggedIngredient(
+            name: ing,
+            reason: reason,
+            riskLevel: SafetyLevel.caution,
+          ));
+        }
+      } else if (normIng == 'alcohol' || normIng == 'alcohol denat.' || normIng == 'ethanol') {
+        if (profile.skinType == SkinType.dry || profile.skinType == SkinType.sensitive) {
+          level = SafetyLevel.caution;
+          reason = 'แอลกอฮอล์เข้มข้น อาจทำให้ผิวแห้งตึงหรือระคายเคือง';
+          flagged.add(FlaggedIngredient(
+            name: ing,
+            reason: reason,
+            riskLevel: SafetyLevel.caution,
+          ));
+        }
+      }
+
+      breakdown.add(IngredientBreakdown(
+        name: ing,
+        function: function,
+        riskLevel: level,
+      ));
+    }
+
+    final hasDanger = flagged.any((f) => f.riskLevel == SafetyLevel.danger);
+    final hasCaution = flagged.any((f) => f.riskLevel == SafetyLevel.caution);
+
+    SafetyLevel overall = SafetyLevel.safe;
+    String summaryTh;
+    String summaryEn;
+
+    if (hasDanger) {
+      overall = SafetyLevel.danger;
+      summaryTh = 'พบสารที่ตรงกับประวัติภูมิแพ้ของคุณ ควรหลีกเลี่ยงการใช้ผลิตภัณฑ์นี้';
+      summaryEn = 'Found ingredients matching your known allergens. Avoid using this product.';
+    } else if (hasCaution) {
+      overall = SafetyLevel.caution;
+      summaryTh = 'พบส่วนผสมที่ควรระวังสำหรับสภาพผิวของคุณ ควรทดสอบการแพ้ก่อนใช้';
+      summaryEn = 'Contains ingredients to use with caution for your skin profile. Patch test recommended.';
+    } else {
+      overall = SafetyLevel.safe;
+      summaryTh = 'ไม่พบสารก่อภูมิแพ้หรือสารเคมีอันตราย เหมาะสำหรับสภาพผิวของคุณ';
+      summaryEn = 'No known allergens or hazardous chemicals found. Suitable for your skin profile.';
+    }
+
+    return AnalysisResult(
+      overallSafety: overall,
+      summaryTh: summaryTh,
+      summaryEn: summaryEn,
+      flaggedIngredients: flagged,
+      ingredientBreakdown: breakdown,
     );
   }
 

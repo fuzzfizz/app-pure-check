@@ -4,7 +4,6 @@ import 'package:pure_check/core/models/cosing_ingredient.dart';
 import 'package:pure_check/core/models/product.dart';
 import 'package:pure_check/core/services/admin_moderation_service.dart';
 import 'package:pure_check/core/services/cosing_verification_service.dart';
-import 'package:pure_check/core/services/gemini_service.dart';
 import 'package:pure_check/core/services/inci_search_service.dart';
 import 'package:pure_check/core/services/supabase_service.dart';
 
@@ -13,7 +12,6 @@ class FakeCosIngVerificationService extends CosIngVerificationService {
 
   FakeCosIngVerificationService({this.onVerifyBatch})
       : super(
-          geminiService: GeminiService(),
           supabaseService: SupabaseService(),
         );
 

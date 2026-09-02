@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
 import '../models/allergen.dart';
@@ -197,4 +199,78 @@ class SupabaseService {
       }
     }
   }
+
+  Future<List<Map<String, dynamic>>> _getActiveUserKeysPayload() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rawList = prefs.getStringList('custom_user_api_keys_list_v1');
+      if (rawList != null) {
+        final List<Map<String, dynamic>> list = [];
+        for (final item in rawList) {
+          final map = jsonDecode(item) as Map<String, dynamic>;
+          if (map['isEnabled'] == true && (map['key'] as String?)?.isNotEmpty == true) {
+            list.add({
+              'key': (map['key'] as String).trim(),
+              'provider': map['provider'],
+              'model': map['defaultModel'],
+            });
+          }
+        }
+        return list;
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Checks a list of unknown/unrecognized ingredient terms for typos using Edge Function
+  Future<Map<String, String>> checkIngredientTypos(List<String> unknownIngredients) async {
+    if (unknownIngredients.isEmpty) return {};
+    try {
+      final userKeys = await _getActiveUserKeysPayload();
+      final response = await _client.functions.invoke(
+        'check-ingredient-typos',
+        body: {
+          'unknown_ingredients': unknownIngredients,
+          if (userKeys.isNotEmpty) 'user_api_keys': userKeys,
+        },
+      );
+      if (response.status == 200 && response.data is Map) {
+        final data = Map<String, dynamic>.from(response.data as Map);
+        final corrections = data['corrections'];
+        if (corrections is Map) {
+          final Map<String, String> result = {};
+          corrections.forEach((k, v) {
+            if (v != null && v.toString().isNotEmpty) {
+              result[k.toString()] = v.toString();
+            }
+          });
+          return result;
+        }
+      }
+    } catch (_) {}
+    return {};
+  }
+
+  /// Verifies an ingredient candidate or resolves chemical synonyms using Edge Function
+  Future<Map<String, dynamic>?> verifyIngredient({
+    required String name,
+    String? action,
+  }) async {
+    try {
+      final userKeys = await _getActiveUserKeysPayload();
+      final response = await _client.functions.invoke(
+        'verify-ingredient',
+        body: {
+          'raw_input': name,
+          if (action != null) 'action': action,
+          if (userKeys.isNotEmpty) 'user_api_keys': userKeys,
+        },
+      );
+      if (response.status == 200 && response.data is Map) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+    } catch (_) {}
+    return null;
+  }
 }
+

@@ -2,55 +2,45 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:pure_check/core/models/chemical_synonym_result.dart';
-import 'package:pure_check/core/models/cosing_ingredient.dart';
 import 'package:pure_check/core/services/cosing_verification_service.dart';
-import 'package:pure_check/core/services/gemini_service.dart';
 import 'package:pure_check/core/services/supabase_service.dart';
-
-class FakeGeminiService extends GeminiService {
-  final CosIngIngredient? Function(String name)? onVerifyCosIng;
-  final ChemicalSynonymResult? Function(String input)? onResolveSynonym;
-
-  FakeGeminiService({this.onVerifyCosIng, this.onResolveSynonym});
-
-  @override
-  Future<ChemicalSynonymResult?> resolveChemicalSynonym(String rawInput) async {
-    if (onResolveSynonym != null) return onResolveSynonym!(rawInput);
-    if (rawInput.contains('gas') || rawInput.contains('poison')) {
-      return ChemicalSynonymResult(
-        rawInput: rawInput,
-        isValidSynonym: false,
-        canonicalInciName: null,
-        reason: 'Invalid or suspicious mixture',
-      );
-    }
-    if (rawInput.contains('Aqua') || rawInput.contains('Water') || rawInput.contains('Eau')) {
-      return ChemicalSynonymResult(
-        rawInput: rawInput,
-        isValidSynonym: true,
-        canonicalInciName: 'Water',
-        reason: 'Aqua, Water, and Eau are multi-lingual translations for water',
-      );
-    }
-    return null;
-  }
-
-  @override
-  Future<CosIngIngredient?> verifyCosIngIngredient(String rawName) async {
-    if (onVerifyCosIng != null) return onVerifyCosIng!(rawName);
-    return CosIngIngredient(
-      name: rawName,
-      isValidInci: true,
-      category: 'Active / Vitamin',
-      descriptionTh: 'สารบำรุงผิวที่ผ่านการรับรอง',
-      confidenceScore: 90,
-    );
-  }
-}
 
 class FakeSupabaseService extends SupabaseService {
   final List<Map<String, String?>> addedInci = [];
+  final Map<String, dynamic>? Function(String name, String? action)? onVerifyIngredient;
+
+  FakeSupabaseService({this.onVerifyIngredient});
+
+  @override
+  Future<Map<String, dynamic>?> verifyIngredient({
+    required String name,
+    String? action,
+  }) async {
+    if (onVerifyIngredient != null) return onVerifyIngredient!(name, action);
+    if (name.contains('gas') || name.contains('poison')) {
+      return {
+        'raw_input': name,
+        'is_valid_synonym': false,
+        'canonical_inci_name': null,
+        'reason': 'Invalid or suspicious mixture',
+      };
+    }
+    if (name.contains('Aqua') || name.contains('Water') || name.contains('Eau')) {
+      return {
+        'raw_input': name,
+        'is_valid_synonym': true,
+        'canonical_inci_name': 'Water',
+        'reason': 'Aqua, Water, and Eau are multi-lingual translations for water',
+      };
+    }
+    return {
+      'name': name,
+      'is_valid_inci': true,
+      'category': 'Active / Vitamin',
+      'description_th': 'สารบำรุงผิวที่ผ่านการรับรอง',
+      'confidence_score': 90,
+    };
+  }
 
   @override
   Future<void> addInciIngredient({
@@ -86,20 +76,18 @@ void main() {
         return http.Response('{"status": 0}', 404);
       });
 
-      final fakeGemini = FakeGeminiService(
-        onVerifyCosIng: (name) => CosIngIngredient(
-          name: name,
-          isValidInci: true,
-          cosingId: '35650',
-          category: 'Active / Vitamin B3',
-          descriptionTh: 'วิตามินบี 3 ช่วยลดรอยแดงและคุมมัน',
-          confidenceScore: 99,
-        ),
+      final fakeSupabase = FakeSupabaseService(
+        onVerifyIngredient: (name, action) => {
+          'name': name,
+          'is_valid_inci': true,
+          'cosing_id': '35650',
+          'category': 'Active / Vitamin B3',
+          'description_th': 'วิตามินบี 3 ช่วยลดรอยแดงและคุมมัน',
+          'confidence_score': 99,
+        },
       );
-      final fakeSupabase = FakeSupabaseService();
 
       final service = CosIngVerificationService(
-        geminiService: fakeGemini,
         supabaseService: fakeSupabase,
         httpClient: mockHttpClient,
       );
@@ -112,24 +100,22 @@ void main() {
       expect(result.descriptionTh, contains('วิตามินบี 3'));
     });
 
-    test('verifyIngredient falls back to Gemini when REST API returns 404', () async {
+    test('verifyIngredient falls back to Supabase Edge Function when REST API returns 404', () async {
       final mockHttpClient = MockClient((request) async {
         return http.Response('{"status": 0}', 404);
       });
 
-      final fakeGemini = FakeGeminiService(
-        onVerifyCosIng: (name) => CosIngIngredient(
-          name: name,
-          isValidInci: true,
-          category: 'Botanical Extract',
-          descriptionTh: 'สารสกัดจากพืชธรรมชาติช่วยปลอบประโลมผิว',
-          confidenceScore: 90,
-        ),
+      final fakeSupabase = FakeSupabaseService(
+        onVerifyIngredient: (name, action) => {
+          'name': name,
+          'is_valid_inci': true,
+          'category': 'Botanical Extract',
+          'description_th': 'สารสกัดจากพืชธรรมชาติช่วยปลอบประโลมผิว',
+          'confidence_score': 90,
+        },
       );
-      final fakeSupabase = FakeSupabaseService();
 
       final service = CosIngVerificationService(
-        geminiService: fakeGemini,
         supabaseService: fakeSupabase,
         httpClient: mockHttpClient,
       );
@@ -142,30 +128,28 @@ void main() {
 
     test('verifyAndSyncBatch verifies and synchronizes valid ingredients to Supabase', () async {
       final mockHttpClient = MockClient((request) async => http.Response('{"status": 0}', 404));
-      final fakeGemini = FakeGeminiService(
-        onVerifyCosIng: (name) {
+      final fakeSupabase = FakeSupabaseService(
+        onVerifyIngredient: (name, action) {
           if (name == 'InvalidText123') {
-            return CosIngIngredient(
-              name: name,
-              isValidInci: false,
-              category: 'Invalid',
-              descriptionTh: '',
-              confidenceScore: 0,
-            );
+            return {
+              'name': name,
+              'is_valid_inci': false,
+              'category': 'Invalid',
+              'description_th': '',
+              'confidence_score': 0,
+            };
           }
-          return CosIngIngredient(
-            name: name,
-            isValidInci: true,
-            category: 'Active',
-            descriptionTh: 'สารบำรุงผิวที่ผ่านการรับรอง',
-            confidenceScore: 95,
-          );
+          return {
+            'name': name,
+            'is_valid_inci': true,
+            'category': 'Active',
+            'description_th': 'สารบำรุงผิวที่ผ่านการรับรอง',
+            'confidence_score': 95,
+          };
         },
       );
-      final fakeSupabase = FakeSupabaseService();
 
       final service = CosIngVerificationService(
-        geminiService: fakeGemini,
         supabaseService: fakeSupabase,
         httpClient: mockHttpClient,
       );
@@ -182,11 +166,9 @@ void main() {
     });
 
     test('verifyIngredient successfully validates multi-lingual cosmetic synonyms (Aqua / Water / Eau)', () async {
-      final fakeGemini = FakeGeminiService();
       final fakeSupabase = FakeSupabaseService();
 
       final service = CosIngVerificationService(
-        geminiService: fakeGemini,
         supabaseService: fakeSupabase,
       );
 
@@ -197,11 +179,9 @@ void main() {
     });
 
     test('verifyIngredient explicitly blocks and rejects bogus/invalid mixtures like gas/water/aqua', () async {
-      final fakeGemini = FakeGeminiService();
       final fakeSupabase = FakeSupabaseService();
 
       final service = CosIngVerificationService(
-        geminiService: fakeGemini,
         supabaseService: fakeSupabase,
       );
 
@@ -213,11 +193,9 @@ void main() {
     });
 
     test('verifyIngredient explicitly blocks toxic combinations like poison / water', () async {
-      final fakeGemini = FakeGeminiService();
       final fakeSupabase = FakeSupabaseService();
 
       final service = CosIngVerificationService(
-        geminiService: fakeGemini,
         supabaseService: fakeSupabase,
       );
 
