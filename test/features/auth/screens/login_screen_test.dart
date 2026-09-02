@@ -88,5 +88,30 @@ void main() {
       // UI did not crash and handled auth failure gracefully
       expect(find.byType(LoginScreen), findsOneWidget);
     });
+
+    testWidgets('toggles password visibility when toggle button is tapped', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      final passwordFieldFinder = find.widgetWithText(TextField, 'รหัสผ่าน');
+      TextField passwordField = tester.widget<TextField>(passwordFieldFinder);
+      expect(passwordField.obscureText, isTrue);
+      expect(find.byIcon(Icons.visibility_off), findsOneWidget);
+
+      final toggleButton = find.byIcon(Icons.visibility_off);
+      await tester.tap(toggleButton);
+      await tester.pumpAndSettle();
+
+      passwordField = tester.widget<TextField>(passwordFieldFinder);
+      expect(passwordField.obscureText, isFalse);
+      expect(find.byIcon(Icons.visibility), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.visibility));
+      await tester.pumpAndSettle();
+
+      passwordField = tester.widget<TextField>(passwordFieldFinder);
+      expect(passwordField.obscureText, isTrue);
+      expect(find.byIcon(Icons.visibility_off), findsOneWidget);
+    });
   });
 }

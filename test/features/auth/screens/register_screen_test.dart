@@ -104,5 +104,40 @@ void main() {
 
       expect(find.text('รหัสผ่านไม่ตรงกัน'), findsOneWidget);
     });
+
+    testWidgets('toggles password and confirm password visibility independently', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      final textFields = find.byType(TextField);
+      TextField passField = tester.widget<TextField>(textFields.at(2));
+      TextField confirmField = tester.widget<TextField>(textFields.at(3));
+
+      expect(passField.obscureText, isTrue);
+      expect(confirmField.obscureText, isTrue);
+      expect(find.byIcon(Icons.visibility_off), findsNWidgets(2));
+
+      // Tap first toggle button (password)
+      final toggles = find.byIcon(Icons.visibility_off);
+      await tester.tap(toggles.first);
+      await tester.pumpAndSettle();
+
+      passField = tester.widget<TextField>(textFields.at(2));
+      confirmField = tester.widget<TextField>(textFields.at(3));
+      expect(passField.obscureText, isFalse);
+      expect(confirmField.obscureText, isTrue);
+      expect(find.byIcon(Icons.visibility), findsOneWidget);
+      expect(find.byIcon(Icons.visibility_off), findsOneWidget);
+
+      // Tap second toggle button (confirm password)
+      await tester.tap(find.byIcon(Icons.visibility_off));
+      await tester.pumpAndSettle();
+
+      passField = tester.widget<TextField>(textFields.at(2));
+      confirmField = tester.widget<TextField>(textFields.at(3));
+      expect(passField.obscureText, isFalse);
+      expect(confirmField.obscureText, isFalse);
+      expect(find.byIcon(Icons.visibility), findsNWidgets(2));
+    });
   });
 }

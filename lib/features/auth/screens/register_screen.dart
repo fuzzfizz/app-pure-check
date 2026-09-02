@@ -21,6 +21,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _loading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   String? _error;
 
   Future<void> _register(AppLocalizations l10n) async {
@@ -125,19 +127,45 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: _passCtrl,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 textInputAction: TextInputAction.next,
                 onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(labelText: l10n.password),
+                decoration: InputDecoration(
+                  labelText: l10n.password,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               PasswordRequirementsView(password: _passCtrl.text),
               const SizedBox(height: 16),
               TextField(
                 controller: _confirmCtrl,
-                obscureText: true,
+                obscureText: _obscureConfirmPassword,
                 textInputAction: TextInputAction.done,
-                decoration: InputDecoration(labelText: l10n.confirmPassword),
+                decoration: InputDecoration(
+                  labelText: l10n.confirmPassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
+                ),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
