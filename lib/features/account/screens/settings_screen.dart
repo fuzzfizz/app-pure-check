@@ -3,13 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/models/user_api_key.dart';
 import '../../../core/providers/locale_provider.dart';
-import '../../../core/providers/gemini_api_key_provider.dart';
-import '../../../core/providers/deepseek_api_key_provider.dart';
-import '../../../core/services/gemini_service.dart';
-import '../../../core/services/deepseek_service.dart';
+import '../../../core/providers/user_api_keys_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../widgets/api_key_manager_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -29,365 +28,16 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  void _showApiKeyDialog(BuildContext context, WidgetRef ref, String? currentKey) {
-    final controller = TextEditingController(text: currentKey ?? '');
-    final isTh = ref.read(localeProvider).languageCode == 'th';
-    final geminiService = GeminiService();
-
-    bool isValidating = false;
-    String? validationMessage;
-    bool? isSuccess;
-    List<String>? availableModels;
-
+  void _showAddApiKeyDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(isTh ? 'ตั้งค่า Gemini API Key' : 'Gemini API Key Settings'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isTh
-                          ? 'ใส่ API Key ส่วนตัวของคุณเพื่อใช้ในการวิเคราะห์ด้วย AI (สร้างฟรีได้ที่ Google AI Studio)'
-                          : 'Enter your custom API Key for AI analysis (Get it free at Google AI Studio).',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: controller,
-                      decoration: InputDecoration(
-                        labelText: 'Gemini API Key',
-                        hintText: 'AIzaSy... หรือ AQ...',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.clear_rounded),
-                          onPressed: () => controller.clear(),
-                        ),
-                      ),
-                    ),
-                    if (isValidating) ...[
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isTh ? 'กำลังทดสอบคีย์...' : 'Testing key...',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ] else if (validationMessage != null) ...[
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            isSuccess == true
-                                ? Icons.check_circle_outline_rounded
-                                : Icons.error_outline_rounded,
-                            color: isSuccess == true ? AppColors.safe : AppColors.danger,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              validationMessage!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isSuccess == true ? AppColors.safe : AppColors.danger,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (availableModels != null && availableModels!.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        isTh ? 'โมเดลที่สามารถใช้งานได้ (Available Models):' : 'Available Models:',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 120),
-                        width: double.maxFinite,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.2)),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.all(8),
-                          itemCount: availableModels!.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Text(
-                                '• ${availableModels![index]}',
-                                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(isTh ? 'ยกเลิก' : 'Cancel'),
-                ),
-                TextButton(
-                  onPressed: isValidating
-                      ? null
-                      : () async {
-                          final key = controller.text.trim();
-                          if (key.isEmpty) {
-                            setState(() {
-                              validationMessage = isTh
-                                  ? 'กรุณากรอก API Key ก่อนทดสอบ'
-                                  : 'Please enter an API Key to test';
-                              isSuccess = false;
-                              availableModels = null;
-                            });
-                            return;
-                          }
-
-                          setState(() {
-                            isValidating = true;
-                            validationMessage = null;
-                            isSuccess = null;
-                            availableModels = null;
-                          });
-
-                          final error = await geminiService.validateApiKey(key);
-                          final models = await geminiService.getAvailableModels(key);
-
-                          setState(() {
-                            isValidating = false;
-                            availableModels = models;
-                            if (error == null) {
-                              validationMessage = isTh
-                                  ? 'คีย์ใช้งานได้ปกติ (โมเดล Gemini Flash พร้อมใช้งาน)'
-                                  : 'Key is valid (Gemini Flash ready)';
-                              isSuccess = true;
-                            } else {
-                              validationMessage = error;
-                              isSuccess = false;
-                            }
-                          });
-                        },
-                  child: Text(isTh ? 'ทดสอบคีย์' : 'Test Key'),
-                ),
-                ElevatedButton(
-                  onPressed: isValidating
-                      ? null
-                      : () async {
-                          final newKey = controller.text.trim();
-                          await ref.read(geminiApiKeyProvider.notifier).setKey(newKey.isEmpty ? null : newKey);
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isTh
-                                      ? (newKey.isEmpty ? 'รีเซ็ตเป็นคีย์ระบบเรียบร้อย' : 'บันทึก Gemini API Key สำเร็จ')
-                                      : (newKey.isEmpty ? 'Reset to system key' : 'Gemini API Key saved successfully'),
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                  child: Text(isTh ? 'บันทึก' : 'Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showDeepSeekApiKeyDialog(BuildContext context, WidgetRef ref, String? currentKey) {
-    final controller = TextEditingController(text: currentKey ?? '');
-    final isTh = ref.read(localeProvider).languageCode == 'th';
-    final deepSeekService = DeepSeekService();
-
-    bool isValidating = false;
-    String? validationMessage;
-    bool? isSuccess;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(isTh ? 'ตั้งค่า DeepSeek / OpenRouter API Key (สำรอง)' : 'DeepSeek / OpenRouter API Key Settings'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isTh
-                          ? 'ใส่ API Key ของ DeepSeek (sk-...) หรือ OpenRouter (sk-or-v1-...) เพื่อใช้สำรองเมื่อ Gemini หมดโควต้า (ระบบจะสลับใช้ให้อัตโนมัติ)'
-                          : 'Enter a DeepSeek (sk-...) or OpenRouter (sk-or-v1-...) API Key as fallback when Gemini API limit is reached (Auto-routed).',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: controller,
-                      decoration: InputDecoration(
-                        labelText: 'DeepSeek / OpenRouter API Key',
-                        hintText: 'sk-... หรือ sk-or-v1-...',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.clear_rounded),
-                          onPressed: () => controller.clear(),
-                        ),
-                      ),
-                    ),
-                    if (isValidating) ...[
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isTh ? 'กำลังทดสอบคีย์...' : 'Testing key...',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ] else if (validationMessage != null) ...[
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            isSuccess == true
-                                ? Icons.check_circle_outline_rounded
-                                : Icons.error_outline_rounded,
-                            color: isSuccess == true ? AppColors.safe : AppColors.danger,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              validationMessage!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isSuccess == true ? AppColors.safe : AppColors.danger,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(isTh ? 'ยกเลิก' : 'Cancel'),
-                ),
-                TextButton(
-                  onPressed: isValidating
-                      ? null
-                      : () async {
-                          final key = controller.text.trim();
-                          if (key.isEmpty) {
-                            setState(() {
-                              validationMessage = isTh
-                                  ? 'กรุณากรอก API Key ก่อนทดสอบ'
-                                  : 'Please enter an API Key to test';
-                              isSuccess = false;
-                            });
-                            return;
-                          }
-
-                          setState(() {
-                            isValidating = true;
-                            validationMessage = null;
-                            isSuccess = null;
-                          });
-
-                          final error = await deepSeekService.validateApiKey(key);
-                          final isOpenRouter = deepSeekService.isOpenRouterKey(key);
-
-                          setState(() {
-                            isValidating = false;
-                            if (error == null) {
-                              validationMessage = isTh
-                                  ? (isOpenRouter
-                                      ? 'คีย์ OpenRouter ใช้งานได้ปกติ (Model: deepseek/deepseek-chat)'
-                                      : 'คีย์ DeepSeek ใช้งานได้ปกติ (Model: deepseek-chat)')
-                                  : (isOpenRouter
-                                      ? 'OpenRouter key valid (Model: deepseek/deepseek-chat)'
-                                      : 'DeepSeek key valid (Model: deepseek-chat)');
-                              isSuccess = true;
-                            } else {
-                              validationMessage = error;
-                              isSuccess = false;
-                            }
-                          });
-                        },
-                  child: Text(isTh ? 'ทดสอบคีย์' : 'Test Key'),
-                ),
-                ElevatedButton(
-                  onPressed: isValidating
-                      ? null
-                      : () async {
-                          final newKey = controller.text.trim();
-                          await ref.read(deepSeekApiKeyProvider.notifier).setKey(newKey.isEmpty ? null : newKey);
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isTh
-                                      ? (newKey.isEmpty ? 'รีเซ็ตเป็นคีย์ DeepSeek ระบบเรียบร้อย' : 'บันทึก DeepSeek API Key สำเร็จ')
-                                      : (newKey.isEmpty ? 'Reset to system key' : 'DeepSeek API Key saved successfully'),
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                  child: Text(isTh ? 'บันทึก' : 'Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (context) => const AddApiKeyDialog(),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final geminiApiKey = ref.watch(geminiApiKeyProvider);
-    final deepSeekApiKey = ref.watch(deepSeekApiKeyProvider);
     final isTh = ref.watch(localeProvider).languageCode == 'th';
     final profileAsync = ref.watch(currentProfileProvider);
     final profile = profileAsync.asData?.value;
@@ -421,79 +71,19 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(),
 
-          // API Key section - Gemini
-          _buildSectionHeader(isTh ? 'ตั้งค่า AI API Key หลัก & สำรอง (Optional)' : 'Primary & Fallback AI API Keys'),
-          SwitchListTile(
-            title: Text(isTh ? 'ใช้ Gemini API Key ส่วนตัว' : 'Use Custom Gemini API Key'),
-            subtitle: Text(
+          // Custom AI API Keys Section (Max 3 keys with Auto-detection & Quota testing)
+          _buildSectionHeader(isTh ? 'จัดการ AI API Key ส่วนตัว (สูงสุด 3 คีย์)' : 'Custom AI API Keys (Max 3)'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
               isTh
-                  ? 'ปิดเพื่อใช้คีย์ของระบบเป็นค่าเริ่มต้น'
-                  : 'Toggle to use your own API Key instead of the default',
+                  ? 'คุณสามารถเพิ่มคีย์ของคุณเองได้สูงสุด 3 คีย์ ระบบจะตรวจจับค่ายและโควต้าให้อัตโนมัติ (หากคีย์หมดโควต้า ระบบจะสลับไปใช้คีย์กลางของระบบให้อัตโนมัติ)'
+                  : 'Add up to 3 custom API keys. The app auto-detects the provider and checks quota limits (falls back to system pool if exhausted).',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
-            value: ref.watch(useCustomGeminiKeyProvider),
-            activeThumbColor: AppColors.primary,
-            onChanged: (val) async {
-              await ref.read(useCustomGeminiKeyProvider.notifier).setUseCustomKey(val);
-              if (val && (geminiApiKey == null || geminiApiKey.trim().isEmpty)) {
-                if (context.mounted) {
-                  _showApiKeyDialog(context, ref, geminiApiKey);
-                }
-              }
-            },
           ),
-          ListTile(
-            enabled: ref.watch(useCustomGeminiKeyProvider),
-            leading: const Icon(Icons.vpn_key_rounded, color: AppColors.primary),
-            title: Text(isTh ? 'กรอก Gemini API Key' : 'Enter Gemini API Key'),
-            subtitle: Text(
-              geminiApiKey != null && geminiApiKey.isNotEmpty
-                  ? (isTh
-                      ? 'คีย์ส่วนตัว: ${geminiApiKey.length >= 8 ? "${geminiApiKey.substring(0, 4)}...${geminiApiKey.substring(geminiApiKey.length - 4)}" : geminiApiKey}'
-                      : 'Custom Key: ${geminiApiKey.length >= 8 ? "${geminiApiKey.substring(0, 4)}...${geminiApiKey.substring(geminiApiKey.length - 4)}" : geminiApiKey}')
-                  : (isTh ? 'ยังไม่ได้ตั้งค่าคีย์' : 'No key set'),
-            ),
-            trailing: const Icon(Icons.edit_rounded, size: 20),
-            onTap: ref.watch(useCustomGeminiKeyProvider)
-                ? () => _showApiKeyDialog(context, ref, geminiApiKey)
-                : null,
-          ),
-          const SizedBox(height: 8),
-
-          // API Key section - DeepSeek Fallback
-          SwitchListTile(
-            title: Text(isTh ? 'ใช้ DeepSeek API Key ส่วนตัว (สำรอง)' : 'Use Custom DeepSeek API Key (Fallback)'),
-            subtitle: Text(
-              isTh
-                  ? 'ใช้สำรองอัตโนมัติเมื่อ Gemini API หมดโควต้า'
-                  : 'Used automatically when Gemini API quota runs out',
-            ),
-            value: ref.watch(useCustomDeepSeekKeyProvider),
-            activeThumbColor: AppColors.primaryDark,
-            onChanged: (val) async {
-              await ref.read(useCustomDeepSeekKeyProvider.notifier).setUseCustomKey(val);
-              if (val && (deepSeekApiKey == null || deepSeekApiKey.trim().isEmpty)) {
-                if (context.mounted) {
-                  _showDeepSeekApiKeyDialog(context, ref, deepSeekApiKey);
-                }
-              }
-            },
-          ),
-          ListTile(
-            enabled: ref.watch(useCustomDeepSeekKeyProvider),
-            leading: const Icon(Icons.psychology_outlined, color: AppColors.primaryDark),
-            title: Text(isTh ? 'กรอก DeepSeek API Key' : 'Enter DeepSeek API Key'),
-            subtitle: Text(
-              deepSeekApiKey != null && deepSeekApiKey.isNotEmpty
-                  ? (isTh
-                      ? 'คีย์สำรอง: ${deepSeekApiKey.length >= 8 ? "${deepSeekApiKey.substring(0, 4)}...${deepSeekApiKey.substring(deepSeekApiKey.length - 4)}" : deepSeekApiKey}'
-                      : 'Fallback Key: ${deepSeekApiKey.length >= 8 ? "${deepSeekApiKey.substring(0, 4)}...${deepSeekApiKey.substring(deepSeekApiKey.length - 4)}" : deepSeekApiKey}')
-                  : (isTh ? 'ยังไม่ได้ตั้งค่าคีย์สำรอง' : 'No fallback key set'),
-            ),
-            trailing: const Icon(Icons.edit_rounded, size: 20),
-            onTap: ref.watch(useCustomDeepSeekKeyProvider)
-                ? () => _showDeepSeekApiKeyDialog(context, ref, deepSeekApiKey)
-                : null,
-          ),
+          const SizedBox(height: 12),
+          _buildUserKeysList(context, ref, isTh),
           const Divider(),
 
           // Help / Support
@@ -543,6 +133,182 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(l10n.signOut),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildUserKeysList(BuildContext context, WidgetRef ref, bool isTh) {
+    final userKeys = ref.watch(userApiKeysProvider);
+    final notifier = ref.read(userApiKeysProvider.notifier);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.key_rounded, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      isTh ? 'คีย์ที่บันทึกไว้' : 'Saved Keys',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: userKeys.length >= 3
+                        ? AppColors.danger.withValues(alpha: 0.1)
+                        : AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${userKeys.length} / 3',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: userKeys.length >= 3 ? AppColors.danger : AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (userKeys.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  isTh
+                      ? 'ยังไม่มีคีย์ส่วนตัว (ระบบจะใช้ AI Pool กลางของแอปในการวิเคราะห์)'
+                      : 'No custom keys added (App will use system AI pool automatically).',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: userKeys.length,
+                separatorBuilder: (_, __) => const Divider(height: 16),
+                itemBuilder: (context, index) {
+                  final keyItem = userKeys[index];
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  keyItem.providerName,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                                const SizedBox(width: 6),
+                                _buildStatusChip(keyItem.status, isTh),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${keyItem.maskedKey} (${keyItem.defaultModel})',
+                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            ),
+                            if (keyItem.statusMessage != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                keyItem.statusMessage!,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: keyItem.status == KeyStatus.valid
+                                      ? AppColors.safe
+                                      : (keyItem.status == KeyStatus.quotaExceeded
+                                          ? Colors.amber.shade800
+                                          : AppColors.danger),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        tooltip: isTh ? 'ทดสอบโควต้าอีกครั้ง' : 'Recheck Quota',
+                        onPressed: () => notifier.recheckKey(keyItem.id),
+                      ),
+                      Switch(
+                        value: keyItem.isEnabled,
+                        activeThumbColor: AppColors.primary,
+                        onChanged: (val) => notifier.toggleKey(keyItem.id, val),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.danger),
+                        tooltip: isTh ? 'ลบคีย์' : 'Delete',
+                        onPressed: () => notifier.removeKey(keyItem.id),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: Text(
+                userKeys.length >= 3
+                    ? (isTh ? 'บันทึกครบ 3 คีย์แล้ว' : 'Max 3 Keys Reached')
+                    : (isTh ? 'เพิ่ม AI API Key' : 'Add AI API Key'),
+              ),
+              onPressed: userKeys.length >= 3 ? null : () => _showAddApiKeyDialog(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(KeyStatus status, bool isTh) {
+    Color color;
+    String text;
+    switch (status) {
+      case KeyStatus.valid:
+        color = AppColors.safe;
+        text = isTh ? 'พร้อมใช้' : 'Ready';
+        break;
+      case KeyStatus.quotaExceeded:
+        color = Colors.amber.shade700;
+        text = isTh ? 'โควต้าเต็ม' : 'Limit';
+        break;
+      case KeyStatus.invalid:
+        color = AppColors.danger;
+        text = isTh ? 'ไม่ถูกต้อง' : 'Invalid';
+        break;
+      default:
+        color = AppColors.textSecondary;
+        text = isTh ? 'รอตรวจ' : 'Pending';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold),
       ),
     );
   }

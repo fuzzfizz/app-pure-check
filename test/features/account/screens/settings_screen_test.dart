@@ -46,4 +46,18 @@ void main() {
 
     expect(find.text('Admin Product Review'), findsNothing);
   });
+
+  testWidgets('renders custom AI key manager section with 0 / 3 counter and add button', (WidgetTester tester) async {
+    const userProfile = UserProfile(
+      id: 'user-1',
+      skinType: SkinType.normal,
+      role: 'user',
+    );
+
+    await tester.pumpWidget(buildWidget(profile: userProfile));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('0 / 3'), findsOneWidget);
+    expect(find.text('เพิ่ม AI API Key'), findsOneWidget);
+  });
 }

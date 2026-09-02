@@ -1,10 +1,8 @@
 import { serve } from "std/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "../_shared/cors.ts";
+import { verifyUserJwt } from "../_shared/auth.ts";
+import { AISmartRouter, UserCustomKeyInput } from "../_shared/ai_smart_router.ts";
 
 const SAFE_FATTY_ALCOHOLS = [
   'cetearyl alcohol',
@@ -64,26 +62,56 @@ function isSmartMatch(target: string, ingredient: string, aliases: string[] = []
   return false;
 }
 
+const aiRouter = new AISmartRouter();
+
 serve(async (req: Request) => {
   // Handle OPTIONS CORS preflight headers
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // 1. Verify User JWT Token
+  const { user, errorResponse } = await verifyUserJwt(req);
+  if (errorResponse) {
+    console.warn('[analyze-ingredients] Unauthorized request rejected.');
+    return errorResponse;
+  }
+  console.log(`[analyze-ingredients] Authenticated user: ${user?.id}`);
+
   try {
     // Extract request body
     const body = await req.json();
-    const { profile, allergens = [], ingredients = [] } = body || {};
+    const {
+      profile,
+      allergens = [],
+      ingredients = [],
+      user_api_keys = [],
+      custom_api_key,
+    } = body || {};
 
-    // Read env vars
+    // Prepare user custom keys (supports both array and legacy single key)
+    const userKeys: UserCustomKeyInput[] = [];
+    if (Array.isArray(user_api_keys)) {
+      for (const k of user_api_keys) {
+        if (k && typeof k.key === 'string' && k.key.trim().isNotEmpty) {
+          userKeys.push({
+            key: k.key.trim(),
+            provider: k.provider,
+            model: k.model,
+          });
+        }
+      }
+    }
+    if (userKeys.length === 0 && typeof custom_api_key === 'string' && custom_api_key.trim()) {
+      userKeys.push({ key: custom_api_key.trim() });
+    }
+
+    // Read Supabase config for Database Guardrails
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || '';
-
-    // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Query hazardous_chemicals table from Supabase DB with Smart Match & Word Boundaries
+    // 2. Query hazardous_chemicals table with Smart Match & Word Boundaries
     const hazardousMatches: Array<{ name: string; reason: string; risk_level: string }> = [];
     if (supabaseUrl && supabaseServiceKey && Array.isArray(ingredients) && ingredients.length > 0) {
       try {
@@ -97,7 +125,6 @@ serve(async (req: Request) => {
             if (!chemName) continue;
 
             const aliases: string[] = Array.isArray(row.aliases) ? row.aliases : [];
-
             const matchedIng = ingredients.find((ing: string) =>
               isSmartMatch(chemName, String(ing), aliases)
             );
@@ -116,7 +143,7 @@ serve(async (req: Request) => {
       }
     }
 
-    // 2. Check for User Allergens matching ingredients with Smart Match & Word Boundaries
+    // 3. Check for User Allergens matching ingredients
     const allergenMatches: Array<{ name: string; reason: string; risk_level: string }> = [];
     if (Array.isArray(allergens) && Array.isArray(ingredients)) {
       for (const allergen of allergens) {
@@ -136,7 +163,7 @@ serve(async (req: Request) => {
       }
     }
 
-    // 3. Construct Gemini prompt requiring strict JSON response
+    // 4. Construct AI Prompt requiring strict JSON response
     const skinType = profile?.skinType || profile?.skin_type || 'normal';
     const skinConditions = Array.isArray(profile?.skinConditions) ? profile.skinConditions.join(', ') : (profile?.skinConditions || 'none');
     const skinConcerns = Array.isArray(profile?.skinConcerns) ? profile.skinConcerns.join(', ') : (profile?.skinConcerns || 'none');
@@ -175,100 +202,23 @@ Rules:
 - Only flag ingredients that are genuinely concerning for this user's profile
 `;
 
-    let geminiResult: any = null;
+    let aiResult: any = null;
+    let metaInfo: any = null;
 
-    // 4. Make HTTPS request to Gemini API
-    if (geminiApiKey) {
-      try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
-        const response = await fetch(geminiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              temperature: 0.2
-            }
-          })
-        });
-
-        if (response.ok) {
-          const geminiData = await response.json();
-          const responseText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (responseText) {
-            const cleanedText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            geminiResult = JSON.parse(cleanedText);
-          }
-        } else {
-          console.warn(`Gemini API returned status ${response.status}. Attempting DeepSeek API fallback...`);
-        }
-      } catch (geminiErr) {
-        console.error('Error making HTTPS request to Gemini API:', geminiErr);
-      }
+    // 5. Execute via AISmartRouter (User Keys First -> System Pool Failover)
+    try {
+      const routerRes = await aiRouter.execute(prompt, userKeys);
+      aiResult = routerRes.data;
+      metaInfo = routerRes.meta;
+    } catch (routerErr) {
+      console.error('[analyze-ingredients] AISmartRouter failed all candidates:', routerErr);
     }
 
-    // 4b. Fallback to DeepSeek or OpenRouter API if Gemini API is unavailable or failed
-    const deepseekApiKey = (Deno.env.get('DEEPSEEK_API_KEY') || Deno.env.get('OPENROUTER_API_KEY') || '').trim();
-    if (!geminiResult && deepseekApiKey) {
-      try {
-        const isOpenRouter = deepseekApiKey.toLowerCase().startsWith('sk-or-');
-        const fallbackUrl = isOpenRouter
-          ? 'https://openrouter.ai/api/v1/chat/completions'
-          : 'https://api.deepseek.com/chat/completions';
-        const modelName = isOpenRouter ? 'deepseek/deepseek-chat' : 'deepseek-chat';
-
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${deepseekApiKey}`
-        };
-        if (isOpenRouter) {
-          headers['HTTP-Referer'] = 'https://purecheck.app';
-          headers['X-Title'] = 'PureCheck';
-        }
-
-        console.log(`Attempting analysis via ${isOpenRouter ? 'OpenRouter' : 'DeepSeek'} API...`);
-        const response = await fetch(fallbackUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            model: modelName,
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a professional cosmetic dermatologist and ingredient safety analyst. Return ONLY valid JSON.'
-              },
-              {
-                role: 'user',
-                content: prompt
-              }
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.2
-          })
-        });
-
-        if (response.ok) {
-          const fallbackData = await response.json();
-          const contentText = fallbackData?.choices?.[0]?.message?.content;
-          if (contentText) {
-            const cleanedText = contentText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            geminiResult = JSON.parse(cleanedText);
-            console.log(`${isOpenRouter ? 'OpenRouter' : 'DeepSeek'} API analysis successful!`);
-          }
-        } else {
-          console.error(`${isOpenRouter ? 'OpenRouter' : 'DeepSeek'} API returned error status: ${response.status}`);
-        }
-      } catch (fallbackErr) {
-        console.error('Error making HTTPS request to fallback API:', fallbackErr);
-      }
-    }
-
-    // Default response structure if both Gemini and DeepSeek APIs are unavailable
-    if (!geminiResult) {
-      geminiResult = {
+    // Safe fallback structure if all AI providers are exhausted
+    if (!aiResult) {
+      aiResult = {
         overall_safety: "safe",
-        summary_th: "วิเคราะห์ส่วนผสมตามระบบฐานข้อมูลความปลอดภัย",
+        summary_th: "วิเคราะห์ส่วนผสมตามระบบฐานข้อมูลความปลอดภัย (ระบบ AI กำลังพักการทำงาน)",
         summary_en: "Ingredients analyzed according to safety database system.",
         flagged_ingredients: [],
         ingredient_breakdown: (Array.isArray(ingredients) ? ingredients : []).map((ing: string) => ({
@@ -277,11 +227,12 @@ Rules:
           risk_level: "safe"
         }))
       };
+      metaInfo = { source: 'safety_fallback', provider: 'local_guardrails', model: 'rule-based' };
     }
 
-    // 5. Post-process response: enforce Guardrails
-    const flaggedList: Array<{ name: string; reason: string; risk_level: string }> = Array.isArray(geminiResult.flagged_ingredients)
-      ? [...geminiResult.flagged_ingredients]
+    // 6. Post-process response: Enforce Database Guardrails
+    const flaggedList: Array<{ name: string; reason: string; risk_level: string }> = Array.isArray(aiResult.flagged_ingredients)
+      ? [...aiResult.flagged_ingredients]
       : [];
 
     const addFlagged = (item: { name: string; reason: string; risk_level: string }) => {
@@ -310,16 +261,19 @@ Rules:
       }
     }
 
-    geminiResult.flagged_ingredients = flaggedList;
+    aiResult.flagged_ingredients = flaggedList;
 
     if (forceDanger) {
-      geminiResult.overall_safety = 'danger';
-    } else if (forceCaution && geminiResult.overall_safety !== 'danger') {
-      geminiResult.overall_safety = 'caution';
+      aiResult.overall_safety = 'danger';
+    } else if (forceCaution && aiResult.overall_safety !== 'danger') {
+      aiResult.overall_safety = 'caution';
     }
 
+    // Attach router metadata for observability
+    aiResult._meta = metaInfo;
+
     // Return JSON response with HTTP status 200 and CORS headers
-    return new Response(JSON.stringify(geminiResult), {
+    return new Response(JSON.stringify(aiResult), {
       status: 200,
       headers: {
         ...corsHeaders,

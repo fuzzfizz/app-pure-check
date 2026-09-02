@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/models/allergen.dart';
 import '../../../../core/models/analysis_result.dart';
 import '../../../../core/models/product.dart';
@@ -54,12 +56,31 @@ class ScanRepositoryImpl implements ScanRepository {
     required List<String> ingredients,
   }) async {
     try {
+      List<Map<String, dynamic>> userApiKeysPayload = [];
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final rawList = prefs.getStringList('custom_user_api_keys_list_v1');
+        if (rawList != null) {
+          for (final item in rawList) {
+            final map = jsonDecode(item) as Map<String, dynamic>;
+            if (map['isEnabled'] == true && (map['key'] as String?)?.isNotEmpty == true) {
+              userApiKeysPayload.add({
+                'key': (map['key'] as String).trim(),
+                'provider': map['provider'],
+                'model': map['defaultModel'],
+              });
+            }
+          }
+        }
+      } catch (_) {}
+
       final response = await supabaseService.client.functions.invoke(
         'analyze-ingredients',
         body: {
           'profile': profile.toJson(),
           'allergens': allergens.map((a) => a.ingredientName).toList(),
           'ingredients': ingredients,
+          if (userApiKeysPayload.isNotEmpty) 'user_api_keys': userApiKeysPayload,
         },
       );
 
