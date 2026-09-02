@@ -16,21 +16,21 @@ void main() {
       final detected = service.detectProvider('AIzaSyD-1234567890abcdef');
       expect(detected.provider, equals('gemini'));
       expect(detected.providerName, equals('Google Gemini'));
-      expect(detected.defaultModel, equals('gemini-1.5-flash'));
+      expect(detected.defaultModel, equals('gemini-flash-latest'));
     });
 
     test('detectProvider correctly recognizes Groq key prefix', () {
       final detected = service.detectProvider('gsk_abcdef1234567890');
       expect(detected.provider, equals('groq'));
       expect(detected.providerName, equals('Groq Cloud'));
-      expect(detected.defaultModel, equals('llama-3.3-70b-versatile'));
+      expect(detected.defaultModel, equals('openai/gpt-oss-120b'));
     });
 
     test('detectProvider correctly recognizes Cerebras key prefix', () {
       final detected = service.detectProvider('csk-abcdef1234567890');
       expect(detected.provider, equals('cerebras'));
       expect(detected.providerName, equals('Cerebras Cloud'));
-      expect(detected.defaultModel, equals('llama-3.3-70b'));
+      expect(detected.defaultModel, equals('gpt-oss-120b'));
     });
 
     test('detectProvider correctly recognizes OpenRouter key prefix', () {

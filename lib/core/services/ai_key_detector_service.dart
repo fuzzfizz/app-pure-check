@@ -40,22 +40,22 @@ class AiKeyDetectorService {
     DetectedProviderInfo(
       provider: 'gemini',
       providerName: 'Google Gemini',
-      defaultModel: 'gemini-1.5-flash',
+      defaultModel: 'gemini-flash-latest',
     ),
     DetectedProviderInfo(
       provider: 'groq',
       providerName: 'Groq Cloud',
-      defaultModel: 'llama-3.3-70b-versatile',
+      defaultModel: 'openai/gpt-oss-120b',
     ),
     DetectedProviderInfo(
       provider: 'cerebras',
       providerName: 'Cerebras Cloud',
-      defaultModel: 'llama-3.3-70b',
+      defaultModel: 'gpt-oss-120b',
     ),
     DetectedProviderInfo(
       provider: 'openrouter',
       providerName: 'OpenRouter',
-      defaultModel: 'deepseek/deepseek-r1:free',
+      defaultModel: 'meta-llama/llama-3.3-70b-instruct:free',
     ),
     DetectedProviderInfo(
       provider: 'deepseek',
@@ -125,9 +125,9 @@ class AiKeyDetectorService {
         ).timeout(const Duration(seconds: 10));
 
         if (res.statusCode == 200) {
-          return const KeyValidationResult(
+          return KeyValidationResult(
             status: KeyStatus.valid,
-            message: 'คีย์ถูกต้อง มีโควต้าพร้อมใช้งาน (Model: gemini-1.5-flash)',
+            message: 'คีย์ถูกต้อง มีโควต้าพร้อมใช้งาน (Model: ${info.defaultModel})',
           );
         } else if (res.statusCode == 429) {
           return const KeyValidationResult(
@@ -150,7 +150,7 @@ class AiKeyDetectorService {
         } else if (info.provider == 'deepseek') {
           endpoint = 'https://api.deepseek.com/chat/completions';
         } else if (info.provider == 'github') {
-          endpoint = 'https://models.inference.ai.azure.com/chat/completions';
+          endpoint = 'https://models.github.ai/inference/chat/completions';
         }
 
         final res = await _client.post(

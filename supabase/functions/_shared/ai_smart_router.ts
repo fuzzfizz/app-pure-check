@@ -58,84 +58,83 @@ export class AISmartRouter {
     }
 
     geminiKeys.forEach((key, idx) => {
-      // Primary model: gemini-1.5-flash
+      // Primary model: gemini-flash-latest / gemini-2.5-flash
       this.systemEndpoints.push({
-        id: `sys-gemini-1.5-flash-k${idx + 1}`,
-        name: `Gemini 1.5 Flash (System Key #${idx + 1})`,
+        id: `sys-gemini-flash-k${idx + 1}`,
+        name: `Gemini Flash Latest (System Key #${idx + 1})`,
         provider: 'gemini',
-        model: 'gemini-1.5-flash',
+        model: 'gemini-flash-latest',
         apiKey: key,
-        apiUrl: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+        apiUrl: `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`,
         isGeminiNative: true,
         priority: 1,
       });
 
-      // Secondary model: gemini-2.0-flash
+      // Secondary model: gemini-2.5-flash-lite
       this.systemEndpoints.push({
-        id: `sys-gemini-2.0-flash-k${idx + 1}`,
-        name: `Gemini 2.0 Flash (System Key #${idx + 1})`,
+        id: `sys-gemini-2.5-flash-lite-k${idx + 1}`,
+        name: `Gemini 2.5 Flash Lite (System Key #${idx + 1})`,
         provider: 'gemini',
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash-lite',
         apiKey: key,
-        apiUrl: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        apiUrl: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${key}`,
         isGeminiNative: true,
         priority: 2,
       });
     });
 
-    // 2. Groq Cloud Pool (30 RPM, 14,400 RPD free, LPU ultra-fast)
+    // 2. Groq Cloud Pool (Ultra-fast LPU inference, 14,400 RPD free)
     const groqKeys = this.splitKeys('GROQ_API_KEYS');
     if (groqKeys.length === 0 && Deno.env.get('GROQ_API_KEY')) {
       groqKeys.push(Deno.env.get('GROQ_API_KEY')!.trim());
     }
     groqKeys.forEach((key, idx) => {
       this.systemEndpoints.push({
-        id: `sys-groq-llama3-k${idx + 1}`,
-        name: `Groq Llama 3.3 70B (System Key #${idx + 1})`,
+        id: `sys-groq-gpt120b-k${idx + 1}`,
+        name: `Groq GPT-OSS 120B (System Key #${idx + 1})`,
         provider: 'groq',
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         apiKey: key,
         apiUrl: 'https://api.groq.com/openai/v1/chat/completions',
         priority: 3,
       });
+      this.systemEndpoints.push({
+        id: `sys-groq-qwen-k${idx + 1}`,
+        name: `Groq Qwen 3.8 27B (System Key #${idx + 1})`,
+        provider: 'groq',
+        model: 'qwen/qwen3.8-27b',
+        apiKey: key,
+        apiUrl: 'https://api.groq.com/openai/v1/chat/completions',
+        priority: 4,
+      });
     });
 
-    // 3. Cerebras Cloud Pool (30 RPM, 60,000 TPM free)
+    // 3. Cerebras Cloud Pool (Ultra-fast Wafer-scale Engine, 1M tokens/day)
     const cerebrasKeys = this.splitKeys('CEREBRAS_API_KEYS');
     if (cerebrasKeys.length === 0 && Deno.env.get('CEREBRAS_API_KEY')) {
       cerebrasKeys.push(Deno.env.get('CEREBRAS_API_KEY')!.trim());
     }
     cerebrasKeys.forEach((key, idx) => {
       this.systemEndpoints.push({
-        id: `sys-cerebras-llama3-k${idx + 1}`,
-        name: `Cerebras Llama 3.3 70B (System Key #${idx + 1})`,
+        id: `sys-cerebras-gpt120b-k${idx + 1}`,
+        name: `Cerebras GPT-OSS 120B (System Key #${idx + 1})`,
         provider: 'cerebras',
-        model: 'llama-3.3-70b',
+        model: 'gpt-oss-120b',
         apiKey: key,
         apiUrl: 'https://api.cerebras.ai/v1/chat/completions',
-        priority: 4,
+        priority: 5,
       });
     });
 
-    // 4. OpenRouter Free Tier Pool (:free models reset every minute)
+    // 4. OpenRouter Free Tier Pool
     const openrouterKeys = this.splitKeys('OPENROUTER_API_KEYS');
     if (openrouterKeys.length === 0 && Deno.env.get('OPENROUTER_API_KEY')) {
       openrouterKeys.push(Deno.env.get('OPENROUTER_API_KEY')!.trim());
     }
     openrouterKeys.forEach((key, idx) => {
       this.systemEndpoints.push({
-        id: `sys-openrouter-deepseek-free-k${idx + 1}`,
-        name: `OpenRouter Free DeepSeek R1 (System Key #${idx + 1})`,
-        provider: 'openrouter',
-        model: 'deepseek/deepseek-r1:free',
-        apiKey: key,
-        apiUrl: 'https://openrouter.ai/api/v1/chat/completions',
-        headers: { 'HTTP-Referer': 'https://purecheck.app', 'X-Title': 'PureCheck' },
-        priority: 5,
-      });
-      this.systemEndpoints.push({
-        id: `sys-openrouter-llama3-free-k${idx + 1}`,
-        name: `OpenRouter Free Llama 3.3 (System Key #${idx + 1})`,
+        id: `sys-openrouter-llama3-k${idx + 1}`,
+        name: `OpenRouter Llama 3.3 Free (System Key #${idx + 1})`,
         provider: 'openrouter',
         model: 'meta-llama/llama-3.3-70b-instruct:free',
         apiKey: key,
@@ -162,7 +161,7 @@ export class AISmartRouter {
       });
     });
 
-    // 6. GitHub Models (150 RPD free for GitHub users)
+    // 6. GitHub Models
     const githubKeys = this.splitKeys('GITHUB_MODELS_KEYS');
     if (githubKeys.length === 0 && Deno.env.get('GITHUB_MODELS_KEY')) {
       githubKeys.push(Deno.env.get('GITHUB_MODELS_KEY')!.trim());
@@ -174,7 +173,7 @@ export class AISmartRouter {
         provider: 'github',
         model: 'gpt-4o-mini',
         apiKey: key,
-        apiUrl: 'https://models.inference.ai.azure.com/chat/completions',
+        apiUrl: 'https://models.github.ai/inference/chat/completions',
         priority: 8,
       });
     });
@@ -193,7 +192,7 @@ export class AISmartRouter {
       let model = item.model || '';
 
       if (isGemini) {
-        model = model || 'gemini-1.5-flash';
+        model = model || 'gemini-flash-latest';
         apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`;
         list.push({
           id: `user-key-${idx + 1}`,
@@ -207,19 +206,19 @@ export class AISmartRouter {
         });
       } else {
         let defaultEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
-        let defaultModel = 'llama-3.3-70b-versatile';
+        let defaultModel = 'openai/gpt-oss-120b';
 
         if (provider === 'cerebras' || cleanKey.startsWith('csk-')) {
           defaultEndpoint = 'https://api.cerebras.ai/v1/chat/completions';
-          defaultModel = 'llama-3.3-70b';
+          defaultModel = 'gpt-oss-120b';
         } else if (provider === 'openrouter' || cleanKey.startsWith('sk-or-')) {
           defaultEndpoint = 'https://openrouter.ai/api/v1/chat/completions';
-          defaultModel = 'deepseek/deepseek-r1:free';
+          defaultModel = 'meta-llama/llama-3.3-70b-instruct:free';
         } else if (provider === 'deepseek' || cleanKey.startsWith('sk-')) {
           defaultEndpoint = 'https://api.deepseek.com/chat/completions';
           defaultModel = 'deepseek-chat';
-        } else if (provider === 'github' || cleanKey.startsWith('ghp_')) {
-          defaultEndpoint = 'https://models.inference.ai.azure.com/chat/completions';
+        } else if (provider === 'github' || cleanKey.startsWith('ghp_') || cleanKey.startsWith('github_pat_')) {
+          defaultEndpoint = 'https://models.github.ai/inference/chat/completions';
           defaultModel = 'gpt-4o-mini';
         }
 
