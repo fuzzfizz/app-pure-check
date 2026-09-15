@@ -172,28 +172,26 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(res);
   }
 
-  // INCI Ingredients
-  Future<void> addInciIngredient({
+  // Ingredients (aligned with PDF class diagram)
+  Future<void> addIngredient({
     required String name,
-    String? category,
-    String? descriptionTh,
+    String? description,
   }) async {
     final data = <String, dynamic>{
-      'name': name,
+      'ingredient_name': name,
     };
-    if (category != null && category.isNotEmpty) {
-      data['category'] = category;
-    }
-    if (descriptionTh != null && descriptionTh.isNotEmpty) {
-      data['description_th'] = descriptionTh;
+    if (description != null && description.isNotEmpty) {
+      data['description'] = description;
     }
 
     try {
-      await _client.from('inci_ingredients').upsert(data, onConflict: 'name');
+      await _client.from('ingredients').upsert(data, onConflict: 'ingredient_name');
     } catch (_) {
-      // If table doesn't have category/description_th columns yet, fallback to inserting name
       try {
-        await _client.from('inci_ingredients').upsert({'name': name}, onConflict: 'name');
+        await _client.from('ingredients').upsert(
+          {'ingredient_name': name},
+          onConflict: 'ingredient_name',
+        );
       } catch (_) {
         // Catch silently if RLS or network issue
       }

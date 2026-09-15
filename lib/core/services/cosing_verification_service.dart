@@ -127,7 +127,7 @@ class CosIngVerificationService {
   }
 
   /// Verifies a batch of unknown ingredients, and if valid, automatically synchronizes
-  /// them into Supabase `inci_ingredients` table so future checks recognize them instantly.
+  /// them into Supabase `ingredients` table so future checks recognize them instantly.
   Future<List<CosIngIngredient>> verifyAndSyncBatch(
     List<String> unknownIngredients, {
     bool autoSyncToSupabase = true,
@@ -141,12 +141,11 @@ class CosIngVerificationService {
 
         if (autoSyncToSupabase) {
           try {
-            await supabaseService.addInciIngredient(
+            await supabaseService.addIngredient(
               name: verified.name,
-              category: verified.category,
-              descriptionTh: verified.descriptionTh,
+              description: verified.descriptionTh,
             );
-            debugPrint('CosIng Auto-Sync: Successfully added "${verified.name}" to Supabase inci_ingredients');
+            debugPrint('CosIng Auto-Sync: Successfully added "${verified.name}" to Supabase ingredients');
           } catch (e) {
             debugPrint('CosIng Auto-Sync Error: $e');
           }

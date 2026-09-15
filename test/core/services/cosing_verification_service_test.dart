@@ -43,15 +43,13 @@ class FakeSupabaseService extends SupabaseService {
   }
 
   @override
-  Future<void> addInciIngredient({
+  Future<void> addIngredient({
     required String name,
-    String? category,
-    String? descriptionTh,
+    String? description,
   }) async {
     addedInci.add({
       'name': name,
-      'category': category,
-      'description_th': descriptionTh,
+      'description': description,
     });
   }
 }

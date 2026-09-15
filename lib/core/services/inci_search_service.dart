@@ -21,13 +21,13 @@ class InciSearchService {
 
     try {
       final response = await _supabaseService.client
-          .from('inci_ingredients')
-          .select('name')
-          .ilike('name', '%$query%')
+          .from('ingredients')
+          .select('ingredient_name')
+          .ilike('ingredient_name', '%$query%')
           .limit(limit);
 
       final list = response as List;
-      final remoteMatches = list.map((item) => item['name'] as String).toList();
+      final remoteMatches = list.map((item) => item['ingredient_name'] as String).toList();
 
       final combined = <String>{...localMatches, ...remoteMatches}.toList();
       return combined.take(limit).toList();
@@ -56,13 +56,13 @@ class InciSearchService {
     // 2. Remote Supabase check for remaining items
     try {
       final response = await _supabaseService.client
-          .from('inci_ingredients')
-          .select('name')
-          .inFilter('name', needRemoteCheck);
+          .from('ingredients')
+          .select('ingredient_name')
+          .inFilter('ingredient_name', needRemoteCheck);
 
       final list = response as List;
       final recognizedSet = list
-          .map((item) => (item['name'] as String).toLowerCase().trim())
+          .map((item) => (item['ingredient_name'] as String).toLowerCase().trim())
           .toSet();
 
       for (final ingredient in needRemoteCheck) {

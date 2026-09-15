@@ -52,14 +52,14 @@ void main() {
 
     test('searchIngredients returns local matches and queries remote when needed', () async {
       fakeHttpClient.jsonResponseData = [
-        {'name': 'CustomRemoteIngr'},
+        {'ingredient_name': 'CustomRemoteIngr'},
       ];
 
       final results = await service.searchIngredients('CustomRemote', limit: 5);
 
       expect(results, contains('CustomRemoteIngr'));
       expect(fakeHttpClient.lastUrl, isNotNull);
-      expect(fakeHttpClient.lastUrl!.path, contains('/rest/v1/inci_ingredients'));
+      expect(fakeHttpClient.lastUrl!.path, contains('/rest/v1/ingredients'));
     });
 
     test('searchIngredients returns instant local matches without network when limit met', () async {
@@ -70,7 +70,7 @@ void main() {
 
     test('filterUnrecognizedIngredients recognizes standard INCI locally and queries remote for unknowns', () async {
       fakeHttpClient.jsonResponseData = [
-        {'name': 'CustomRemoteApproved'},
+        {'ingredient_name': 'CustomRemoteApproved'},
       ];
 
       final input = ['Water', 'Glycerin', 'CustomRemoteApproved', 'UnknownIngredient123'];
@@ -78,8 +78,8 @@ void main() {
 
       expect(unrecognized, equals(['UnknownIngredient123']));
       expect(fakeHttpClient.lastUrl, isNotNull);
-      expect(fakeHttpClient.lastUrl!.path, contains('/rest/v1/inci_ingredients'));
-      expect(fakeHttpClient.lastUrl!.queryParameters['name'], contains('in.'));
+      expect(fakeHttpClient.lastUrl!.path, contains('/rest/v1/ingredients'));
+      expect(fakeHttpClient.lastUrl!.queryParameters['ingredient_name'], contains('in.'));
     });
 
     test('filterUnrecognizedIngredients returns empty when all ingredients are standard INCI', () async {
