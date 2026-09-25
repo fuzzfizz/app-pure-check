@@ -54,5 +54,69 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('renders English ingredient names with Thai descriptions when in Thai mode', (WidgetTester tester) async {
+      const product = Product(
+        id: 'p2',
+        name: 'Pure Care Cream',
+        brand: 'Pure Brand',
+      );
+
+      const analysis = AnalysisResult(
+        overallSafety: SafetyLevel.caution,
+        summaryTh: 'มีส่วนผสมที่ควรระวัง',
+        summaryEn: 'Caution ingredients found',
+        flaggedIngredients: [
+          FlaggedIngredient(
+            name: 'Alcohol Denat.',
+            reason: 'แอลกอฮอล์เข้มข้น อาจทำให้ผิวแห้งตึง',
+            reasonTh: 'แอลกอฮอล์เข้มข้น อาจทำให้ผิวแห้งตึง',
+            reasonEn: 'High-concentration alcohol may cause dryness',
+            riskLevel: SafetyLevel.caution,
+          ),
+        ],
+        ingredientBreakdown: [
+          IngredientBreakdown(
+            name: 'Glycerin',
+            function: 'สารกักเก็บความชุ่มชื้น',
+            functionTh: 'สารกักเก็บความชุ่มชื้น',
+            functionEn: 'Humectant',
+            riskLevel: SafetyLevel.safe,
+          ),
+          IngredientBreakdown(
+            name: 'Alcohol Denat.',
+            function: 'ตัวทำละลาย / สมานกระชับผิว',
+            functionTh: 'ตัวทำละลาย / สมานกระชับผิว',
+            functionEn: 'Solvent / Astringent',
+            riskLevel: SafetyLevel.caution,
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            locale: const Locale('th'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: ResultScreen(
+              extra: {
+                'product': product,
+                'analysis': analysis,
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Ingredient names in English
+      expect(find.text('Alcohol Denat.'), findsAtLeastNWidgets(1));
+      expect(find.text('Glycerin'), findsOneWidget);
+
+      // Descriptions in Thai
+      expect(find.text('แอลกอฮอล์เข้มข้น อาจทำให้ผิวแห้งตึง'), findsOneWidget);
+      expect(find.text('ตัวทำละลาย / สมานกระชับผิว'), findsOneWidget);
+    });
   });
 }

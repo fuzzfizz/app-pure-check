@@ -132,7 +132,9 @@ serve(async (req: Request) => {
             if (matchedIng) {
               hazardousMatches.push({
                 name: String(matchedIng),
-                reason: String(row.reason || row.description || row.hazard_description || 'สารเคมีอันตรายตามฐานข้อมูล (Hazardous chemical in database)'),
+                reason: String(row.reason_th || row.reason || row.description || 'สารเคมีอันตรายตามฐานข้อมูลความปลอดภัย'),
+                reason_th: String(row.reason_th || row.reason || row.description || 'สารเคมีอันตรายตามฐานข้อมูลความปลอดภัย'),
+                reason_en: String(row.reason_en || row.hazard_description || 'Hazardous chemical according to safety database'),
                 risk_level: String(row.risk_level || row.severity || 'danger')
               });
             }
@@ -144,7 +146,7 @@ serve(async (req: Request) => {
     }
 
     // 3. Check for User Allergens matching ingredients
-    const allergenMatches: Array<{ name: string; reason: string; risk_level: string }> = [];
+    const allergenMatches: Array<{ name: string; reason: string; reason_th?: string; reason_en?: string; risk_level: string }> = [];
     if (Array.isArray(allergens) && Array.isArray(ingredients)) {
       for (const allergen of allergens) {
         if (typeof allergen !== 'string' || !allergen.trim()) continue;
@@ -156,7 +158,9 @@ serve(async (req: Request) => {
         if (matchedIng) {
           allergenMatches.push({
             name: String(matchedIng),
-            reason: `ตรงกับประวัติการแพ้ของคุณ: ${allergen} (Matches your known allergen: ${allergen})`,
+            reason: `ตรงกับประวัติการแพ้ของคุณ: ${allergen}`,
+            reason_th: `ตรงกับประวัติการแพ้ของคุณ: ${allergen}`,
+            reason_en: `Matches your known allergen: ${allergen}`,
             risk_level: 'danger'
           });
         }
@@ -181,16 +185,33 @@ Analyze these cosmetic/skincare product ingredients for a user with the followin
 
 Product ingredients list: ${ingredientListStr}
 
+LANGUAGE REQUIREMENTS:
+1. For all ingredient names ("name"): MUST KEEP THE STANDARD ENGLISH INCI NAME (e.g. "Glycerin", "Niacinamide", "Salicylic Acid", "Ceramide NP"). Do NOT translate chemical or ingredient names into Thai.
+2. For all descriptions and explanations ("reason", "reason_th", "function", "function_th", "summary_th"): MUST BE IN THAI (ภาษาไทย) explaining clearly and simply what each substance does and why it was flagged.
+3. Also provide English equivalents in "reason_en" and "function_en".
+
 Return ONLY valid JSON in this exact structure:
 {
   "overall_safety": "safe|caution|danger",
   "summary_th": "คำอธิบายสรุปความปลอดภัยภาษาไทย 2-3 ประโยค",
   "summary_en": "English safety summary explanation 2-3 sentences",
   "flagged_ingredients": [
-    {"name": "ingredient name", "reason": "why flagged", "risk_level": "caution|danger"}
+    {
+      "name": "Exact English INCI name",
+      "reason": "คำอธิบายเหตุผลภาษาไทยว่าทำไมถึงควรระวังหรืออันตรายสำหรับผู้ใช้คนนี้",
+      "reason_th": "คำอธิบายเหตุผลภาษาไทย",
+      "reason_en": "English reason why flagged",
+      "risk_level": "caution|danger"
+    }
   ],
   "ingredient_breakdown": [
-    {"name": "ingredient name", "function": "what it does", "risk_level": "safe|caution|danger"}
+    {
+      "name": "Exact English INCI name",
+      "function": "คำอธิบายหน้าที่และสรรพคุณของสารเป็นภาษาไทย เช่น สารกักเก็บความชุ่มชื้น, สารทำความสะอาดสูตรอ่อนโยน, สารต้านอนุมูลอิสระ, สารกันเสีย",
+      "function_th": "คำอธิบายหน้าที่และสรรพคุณเป็นภาษาไทย",
+      "function_en": "Function in English (e.g. Humectant, Gentle surfactant)",
+      "risk_level": "safe|caution|danger"
+    }
   ]
 }
 
@@ -199,7 +220,8 @@ Rules:
 - overall_safety = "caution" if concerning ingredients found but no high-risk items/allergens
 - overall_safety = "safe" if no allergens and no significant concerns
 - List ALL ingredients in ingredient_breakdown
-- Only flag ingredients that are genuinely concerning for this user's profile
+- "name" in both arrays MUST ALWAYS be in English (standard INCI)
+- "reason" and "function" MUST be in Thai (ภาษาไทย)
 `;
 
     let aiResult: any = null;
@@ -223,7 +245,9 @@ Rules:
         flagged_ingredients: [],
         ingredient_breakdown: (Array.isArray(ingredients) ? ingredients : []).map((ing: string) => ({
           name: String(ing),
-          function: "Cosmetic ingredient",
+          function: "สารบำรุง/ส่วนผสมเครื่องสำอาง",
+          function_th: "สารบำรุง/ส่วนผสมเครื่องสำอาง",
+          function_en: "Cosmetic ingredient",
           risk_level: "safe"
         }))
       };

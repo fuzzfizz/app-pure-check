@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/data/inci_core_dataset.dart';
 import '../../../../core/models/allergen.dart';
 import '../../../../core/models/analysis_result.dart';
 import '../../../../core/models/product.dart';
@@ -74,6 +75,7 @@ class ScanRepositoryImpl implements ScanRepository {
           'profile': profile.toJson(),
           'allergens': allergens.map((a) => a.ingredientName).toList(),
           'ingredients': ingredients,
+          'locale': 'th',
           if (userApiKeysPayload.isNotEmpty) 'user_api_keys': userApiKeysPayload,
         },
       );
@@ -107,7 +109,9 @@ class ScanRepositoryImpl implements ScanRepository {
       final normIng = ing.trim().toLowerCase();
       SafetyLevel level = SafetyLevel.safe;
       String? reason;
-      const function = 'สารบำรุง/ส่วนผสมเครื่องสำอาง (Cosmetic ingredient)';
+      final matchedInci = InciCoreDataset.find(ing);
+      final functionTh = matchedInci?.descriptionTh ?? 'สารบำรุง/ส่วนผสมเครื่องสำอาง';
+      final functionEn = matchedInci?.category ?? 'Cosmetic ingredient';
 
       final matchedAllergen = allergens.firstWhere(
         (a) => a.ingredientName.trim().isNotEmpty &&
@@ -122,6 +126,8 @@ class ScanRepositoryImpl implements ScanRepository {
         flagged.add(FlaggedIngredient(
           name: ing,
           reason: reason,
+          reasonTh: reason,
+          reasonEn: 'Matches your known allergen (${matchedAllergen.ingredientName})',
           riskLevel: SafetyLevel.danger,
         ));
       } else if (normIng.contains('parfum') || normIng.contains('fragrance')) {
@@ -132,6 +138,8 @@ class ScanRepositoryImpl implements ScanRepository {
           flagged.add(FlaggedIngredient(
             name: ing,
             reason: reason,
+            reasonTh: reason,
+            reasonEn: 'Fragrance may cause irritation in sensitive skin.',
             riskLevel: SafetyLevel.caution,
           ));
         }
@@ -142,6 +150,8 @@ class ScanRepositoryImpl implements ScanRepository {
           flagged.add(FlaggedIngredient(
             name: ing,
             reason: reason,
+            reasonTh: reason,
+            reasonEn: 'High-concentration alcohol may cause dryness or irritation.',
             riskLevel: SafetyLevel.caution,
           ));
         }
@@ -149,7 +159,9 @@ class ScanRepositoryImpl implements ScanRepository {
 
       breakdown.add(IngredientBreakdown(
         name: ing,
-        function: function,
+        function: functionTh,
+        functionTh: functionTh,
+        functionEn: functionEn,
         riskLevel: level,
       ));
     }
