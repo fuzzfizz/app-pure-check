@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
@@ -112,6 +113,32 @@ class SupabaseService {
       res = await _client.from('products').insert(data).select().single();
     }
     return Product.fromJson(res);
+  }
+
+  Future<String?> uploadProductImage({
+    required String barcode,
+    required Uint8List bytes,
+    String fileExtension = 'jpg',
+  }) async {
+    try {
+      final sanitizedBarcode = barcode.isNotEmpty ? barcode : DateTime.now().millisecondsSinceEpoch.toString();
+      final filename = '${sanitizedBarcode}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+      final path = 'products/$filename';
+
+      await _client.storage.from('product-images').uploadBinary(
+        path,
+        bytes,
+        fileOptions: FileOptions(
+          contentType: 'image/$fileExtension',
+          upsert: true,
+        ),
+      );
+
+      final publicUrl = _client.storage.from('product-images').getPublicUrl(path);
+      return publicUrl;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<List<Product>> searchProducts(String query) async {

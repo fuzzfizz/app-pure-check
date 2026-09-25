@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/data/inci_core_dataset.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/models/product.dart';
@@ -28,6 +30,10 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
   final _nameCtrl = TextEditingController();
   final _brandCtrl = TextEditingController();
   final _ingredientsCtrl = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+
+  XFile? _selectedImage;
+  Uint8List? _imageBytes;
 
   Timer? _debounceTimer;
   List<String> _suggestions = [];
@@ -117,6 +123,80 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
     _clearSuggestions();
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _selectedImage = picked;
+          _imageBytes = bytes;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Cannot select image: $e')),
+        );
+      }
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _selectedImage = null;
+      _imageBytes = null;
+    });
+  }
+
+  void _showImageSourceModal(AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: AppColors.mintBg,
+                    child: Icon(Icons.camera_alt_outlined, color: AppColors.primaryDark),
+                  ),
+                  title: Text(l10n.takePhoto),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: AppColors.mintBg,
+                    child: Icon(Icons.photo_library_outlined, color: AppColors.primaryDark),
+                  ),
+                  title: Text(l10n.chooseFromGallery),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _submit(AppLocalizations l10n) async {
     if (_isSubmitting) return;
 
@@ -169,6 +249,19 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
         }
       }
 
+      String? uploadedImageUrl;
+      if (_imageBytes != null) {
+        try {
+          final supabaseService = ref.read(supabaseServiceProvider);
+          final ext = _selectedImage?.name.split('.').last.toLowerCase() ?? 'jpg';
+          uploadedImageUrl = await supabaseService.uploadProductImage(
+            barcode: widget.barcode,
+            bytes: _imageBytes!,
+            fileExtension: ext.isNotEmpty ? ext : 'jpg',
+          );
+        } catch (_) {}
+      }
+
       final user = ref.read(currentUserProvider);
       final product = Product(
         id: '',
@@ -178,6 +271,7 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
         ingredients: ingredientsList,
         rawIngredientsText: ingredientsText,
         source: ProductSource.userEntered,
+        imageUrl: uploadedImageUrl,
         status: 'pending',
         isVerified: false,
         submittedBy: user?.id,
@@ -234,7 +328,78 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+            // Product Image Picker Card
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _imageBytes != null
+                  ? Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        Image.memory(
+                          _imageBytes!,
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          color: Colors.black.withAlpha(150),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () => _showImageSourceModal(l10n),
+                                icon: const Icon(Icons.edit, size: 16, color: Colors.white),
+                                label: Text(l10n.changePhoto, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                              ),
+                              IconButton(
+                                onPressed: _removeImage,
+                                icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                                tooltip: l10n.removePhoto,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : InkWell(
+                      onTap: () => _showImageSourceModal(l10n),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 26,
+                              backgroundColor: AppColors.primary.withAlpha(25),
+                              child: const Icon(Icons.add_a_photo_outlined, color: AppColors.primary, size: 26),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              l10n.productPhoto,
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              l10n.localeName == 'th'
+                                  ? 'แตะเพื่อถ่ายรูปกล่อง หรือเลือกจากอัลบั้ม'
+                                  : 'Tap to capture product photo or choose from gallery',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 20),
             TextField(
               controller: _nameCtrl,
               decoration: InputDecoration(

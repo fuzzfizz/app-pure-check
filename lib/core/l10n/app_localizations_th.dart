@@ -653,4 +653,19 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get invalidPasswordRequirements =>
       'รหัสผ่านไม่ตรงตามเงื่อนไขความปลอดภัย';
+
+  @override
+  String get productPhoto => 'รูปภาพผลิตภัณฑ์ (ไม่บังคับ)';
+
+  @override
+  String get takePhoto => 'ถ่ายภาพด้วยกล้อง';
+
+  @override
+  String get chooseFromGallery => 'เลือกจากคลังภาพ';
+
+  @override
+  String get changePhoto => 'เปลี่ยนรูปภาพ';
+
+  @override
+  String get removePhoto => 'ลบรูปภาพ';
 }

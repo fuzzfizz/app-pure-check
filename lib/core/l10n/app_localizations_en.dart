@@ -656,4 +656,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get invalidPasswordRequirements =>
       'Password does not meet the security requirements';
+
+  @override
+  String get productPhoto => 'Product Photo (Optional)';
+
+  @override
+  String get takePhoto => 'Take a Photo';
+
+  @override
+  String get chooseFromGallery => 'Choose from Gallery';
+
+  @override
+  String get changePhoto => 'Change Photo';
+
+  @override
+  String get removePhoto => 'Remove Photo';
 }

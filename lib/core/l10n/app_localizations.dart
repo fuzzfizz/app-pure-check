@@ -1291,6 +1291,36 @@ abstract class AppLocalizations {
   /// In th, this message translates to:
   /// **'รหัสผ่านไม่ตรงตามเงื่อนไขความปลอดภัย'**
   String get invalidPasswordRequirements;
+
+  /// No description provided for @productPhoto.
+  ///
+  /// In th, this message translates to:
+  /// **'รูปภาพผลิตภัณฑ์ (ไม่บังคับ)'**
+  String get productPhoto;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In th, this message translates to:
+  /// **'ถ่ายภาพด้วยกล้อง'**
+  String get takePhoto;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In th, this message translates to:
+  /// **'เลือกจากคลังภาพ'**
+  String get chooseFromGallery;
+
+  /// No description provided for @changePhoto.
+  ///
+  /// In th, this message translates to:
+  /// **'เปลี่ยนรูปภาพ'**
+  String get changePhoto;
+
+  /// No description provided for @removePhoto.
+  ///
+  /// In th, this message translates to:
+  /// **'ลบรูปภาพ'**
+  String get removePhoto;
 }
 
 class _AppLocalizationsDelegate
