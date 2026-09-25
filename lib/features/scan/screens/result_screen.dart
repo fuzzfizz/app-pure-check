@@ -278,7 +278,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                flagged.localizedReason(l10n.localeName == 'th'),
+                                flagged.reason,
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                               if (flagged.riskLevel != SafetyLevel.danger) ...[
@@ -482,11 +482,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
         ...list.map((ing) {
           final isExpanded = _expandedIngredient == ing.name;
           final inciInfo = InciCoreDataset.find(ing.name);
-          final functionText = isTh
-              ? (inciInfo?.getLocalizedCategory(true) ?? ing.localizedFunction(true))
-              : (inciInfo?.category ?? ing.localizedFunction(false));
-          final descTh = inciInfo?.descriptionTh ?? ing.functionTh ?? ing.function;
-          final descEn = ing.functionEn ?? ing.function ?? inciInfo?.category;
+          final functionText = inciInfo?.category ?? ing.function;
+          final descTh = inciInfo?.descriptionTh;
 
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
@@ -534,7 +531,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                       const SizedBox(height: 8),
                       const Divider(),
                       const SizedBox(height: 4),
-                      if (isTh && descTh != null && descTh.isNotEmpty) ...[
+                      if (descTh != null && descTh.isNotEmpty && isTh) ...[
                         Text(
                           'หน้าที่ & สรรพคุณ: $descTh',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -543,13 +540,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                               ),
                         ),
                         const SizedBox(height: 4),
-                      ] else if (!isTh && descEn != null && descEn.isNotEmpty) ...[
-                        Text(
-                          l10n.functionProperty(descEn),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                        ),
                       ] else if (ing.function != null) ...[
                         Text(
                           l10n.functionProperty(ing.function!),

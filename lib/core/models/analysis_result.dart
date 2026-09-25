@@ -30,31 +30,17 @@ extension SafetyLevelX on SafetyLevel {
 class FlaggedIngredient {
   final String name;
   final String reason;
-  final String? reasonTh;
-  final String? reasonEn;
   final SafetyLevel riskLevel;
 
   const FlaggedIngredient({
     required this.name,
     required this.reason,
-    this.reasonTh,
-    this.reasonEn,
     required this.riskLevel,
   });
 
-  String localizedReason(bool isTh) {
-    if (isTh) {
-      return (reasonTh != null && reasonTh!.isNotEmpty) ? reasonTh! : reason;
-    } else {
-      return (reasonEn != null && reasonEn!.isNotEmpty) ? reasonEn! : reason;
-    }
-  }
-
   factory FlaggedIngredient.fromJson(Map<String, dynamic> json) => FlaggedIngredient(
         name: json['name'] as String,
-        reason: (json['reason'] as String?) ?? (json['reason_th'] as String?) ?? '',
-        reasonTh: json['reason_th'] as String?,
-        reasonEn: json['reason_en'] as String?,
+        reason: json['reason'] as String,
         riskLevel: SafetyLevelX.fromString(json['risk_level'] as String? ?? 'caution'),
       );
 }
@@ -62,31 +48,17 @@ class FlaggedIngredient {
 class IngredientBreakdown {
   final String name;
   final String? function;
-  final String? functionTh;
-  final String? functionEn;
   final SafetyLevel riskLevel;
 
   const IngredientBreakdown({
     required this.name,
     this.function,
-    this.functionTh,
-    this.functionEn,
     required this.riskLevel,
   });
-
-  String? localizedFunction(bool isTh) {
-    if (isTh) {
-      return (functionTh != null && functionTh!.isNotEmpty) ? functionTh : function;
-    } else {
-      return (functionEn != null && functionEn!.isNotEmpty) ? functionEn : function;
-    }
-  }
 
   factory IngredientBreakdown.fromJson(Map<String, dynamic> json) => IngredientBreakdown(
         name: json['name'] as String,
         function: json['function'] as String?,
-        functionTh: json['function_th'] as String?,
-        functionEn: json['function_en'] as String?,
         riskLevel: SafetyLevelX.fromString(json['risk_level'] as String? ?? 'safe'),
       );
 }

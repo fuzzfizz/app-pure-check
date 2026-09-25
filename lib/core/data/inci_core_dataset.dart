@@ -4,20 +4,12 @@ class InciItem {
   final String name;
   final String category;
   final String descriptionTh;
-  final String? categoryTh;
 
   const InciItem({
     required this.name,
     required this.category,
     required this.descriptionTh,
-    this.categoryTh,
   });
-
-  String getLocalizedCategory(bool isTh) {
-    if (!isTh) return category;
-    if (categoryTh != null && categoryTh!.isNotEmpty) return categoryTh!;
-    return InciCoreDataset.translateCategoryToTh(category);
-  }
 }
 
 class InciCoreDataset {
@@ -258,45 +250,5 @@ class InciCoreDataset {
 
   static String _normalize(String input) {
     return input.toLowerCase().trim();
-  }
-
-  /// Translate standard cosmetic category into Thai
-  static String translateCategoryToTh(String category) {
-    final lower = category.toLowerCase().trim();
-    if (lower.contains('solvent') && lower.contains('humectant')) return 'ตัวทำละลาย / ให้ความชุ่มชื้น';
-    if (lower.contains('humectant') && lower.contains('solvent')) return 'สารกักเก็บความชุ่มชื้น / ตัวทำละลาย';
-    if (lower.contains('solvent') && lower.contains('astringent')) return 'ตัวทำละลาย / สมานกระชับผิว';
-    if (lower.contains('solvent') && lower.contains('surfactant')) return 'ตัวทำละลาย / สารทำความสะอาด';
-    if (lower.contains('emollient') && lower.contains('occlusive')) return 'สารเคลือบกักเก็บความชุ่มชื้น';
-    if (lower.contains('emollient') && lower.contains('skin-identical')) return 'สารบำรุงผิวนุ่มเลียนแบบธรรมชาติ';
-    if (lower.contains('emollient') && lower.contains('antioxidant')) return 'สารบำรุงผิวนุ่ม / ต้านอนุมูลอิสระ';
-    if (lower.contains('emulsifier') && lower.contains('surfactant')) return 'สารประสานเนื้อ / สารทำความสะอาด';
-    if (lower.contains('fatty alcohol')) return 'แอลกอฮอล์ไขมันดี (ผสานเนื้อครีม)';
-    if (lower.contains('humectant') && lower.contains('keratolytic')) return 'สารให้ความชุ่มชื้น / ผลัดเซลล์ผิว';
-    if (lower.contains('humectant') && lower.contains('antioxidant')) return 'สารให้ความชุ่มชื้น / ต้านอนุมูลอิสระ';
-    if (lower.contains('soothing') && lower.contains('humectant')) return 'ปลอบประโลมผิว / ให้ความชุ่มชื้น';
-    if (lower.contains('nmf')) return 'สารให้ความชุ่มชื้นตามธรรมชาติผิว (NMF)';
-    if (lower.contains('skin-identical')) return 'ไขมันเลียนแบบเกราะผิวธรรมชาติ';
-    if (lower.contains('physical uv filter')) return 'สารกันแดดสะท้อนแสง (Physical)';
-    if (lower.contains('chemical uv filter')) return 'สารกันแดดดูดซับรังสี (Chemical)';
-    if (lower.contains('uv filter') || lower.contains('sunscreen')) return 'สารกรองรังสี UV / กันแดด';
-    if (lower.contains('vitamin c')) return 'สารสำคัญบำรุงผิว (วิตามินซี)';
-    if (lower.contains('vitamin e')) return 'สารต้านอนุมูลอิสระ (วิตามินอี)';
-    if (lower.contains('pro-vitamin b5')) return 'โปรวิตามินบี 5 (ฟื้นฟูผิว)';
-    if (lower.contains('antioxidant')) return 'สารต้านอนุมูลอิสระ';
-    if (lower.contains('humectant')) return 'สารกักเก็บความชุ่มชื้น';
-    if (lower.contains('emollient')) return 'สารให้ความนุ่มชุ่มชื้นผิว';
-    if (lower.contains('emulsifier')) return 'สารประสานเนื้อครีม';
-    if (lower.contains('surfactant')) return 'สารทำความสะอาด';
-    if (lower.contains('preservative')) return 'สารกันเสีย';
-    if (lower.contains('solvent')) return 'ตัวทำละลาย';
-    if (lower.contains('buffering') || lower.contains('ph adjuster')) return 'สารปรับสมดุลกรด-ด่าง';
-    if (lower.contains('chelating')) return 'สารจับประจุโลหะ';
-    if (lower.contains('viscosity')) return 'สารปรับความข้นหนืด';
-    if (lower.contains('natural active')) return 'สารสกัดธรรมชาติบำรุงผิว';
-    if (lower.contains('exfoliant')) return 'สารผลัดเซลล์ผิว';
-    if (lower.contains('fragrance')) return 'สารแต่งกลิ่น / น้ำหอม';
-    if (lower.contains('active')) return 'สารสำคัญบำรุงผิว';
-    return category;
   }
 }
